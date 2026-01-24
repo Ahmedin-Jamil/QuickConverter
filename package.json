@@ -1,0 +1,27 @@
+{
+  "name": "quickconvert",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^7.2.4"
+  },
+  "dependencies": {
+    "browser-image-compression": "^2.0.2",
+    "chart.js": "^4.5.1",
+    "docx": "^9.5.1",
+    "heic2any": "^0.0.4",
+    "html5-qrcode": "^2.3.8",
+    "papaparse": "^5.5.3",
+    "pdf-lib": "^1.17.1",
+    "pdfjs-dist": "^5.4.530",
+    "qrcode": "^1.5.4",
+    "tesseract.js": "^7.0.0",
+    "xlsx": "^0.18.5"
+  }
+}
