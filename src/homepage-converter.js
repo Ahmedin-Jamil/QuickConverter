@@ -86,8 +86,8 @@ formatTabs.forEach(tab => {
             document.getElementById('uploadTypeHint').textContent = hint;
         }
         else if (selectedTool === 'csv-to-pdf' || selectedTool === 'csv-to-docs') {
-            mainFileInput.setAttribute('accept', 'text/csv,.csv');
-            console.log('Set accept to: text/csv,.csv');
+            mainFileInput.setAttribute('accept', '.csv,text/csv,application/csv,application/vnd.ms-excel');
+            console.log('Set accept to: .csv,text/csv');
             document.getElementById('uploadTypeHint').textContent = 'CSV File • Structured Data Layout';
         }
         else if (selectedTool === 'excel-to-pdf' || selectedTool === 'excel-to-docs') {
@@ -159,6 +159,8 @@ formatTabs.forEach(tab => {
 // Initialize file input accept attribute for default tool
 if (mainFileInput) {
     mainFileInput.setAttribute('accept', 'application/pdf');
+    // Allow re-selecting the same file
+    mainFileInput.onclick = () => { mainFileInput.value = ''; };
 }
 
 // Hide "Show Record Labels" when Landscape mode is selected
@@ -848,23 +850,39 @@ function displayResults(results) {
     // Show slide-in toast notification for non-Word files
     showSuccessToast();
 
-    // Show the Preview & Download button beside Convert button for non-Word files
+    // Show the Download button beside Convert button for all files
     const mainPreviewBtn = document.getElementById('mainPreviewDownloadBtn');
     if (mainPreviewBtn && results.length > 0) {
         mainPreviewBtn.style.display = 'inline-flex';
+        mainPreviewBtn.textContent = `📥 Download ${results[0].filename.split('.').pop().toUpperCase()}`;
+        mainPreviewBtn.style.background = 'linear-gradient(135deg, #217346 0%, #185c37 100%)';
 
         // Store results globally so the button can access them
         window.currentConversionResults = results;
 
         console.log('🔍 RESULTS DEBUG: Stored results =', results.map(r => ({ filename: r.filename, size: r.size, blobType: r.blob.type })));
 
-        // Set up click handler
+        // Set up click handler for direct download
         mainPreviewBtn.onclick = () => {
             if (window.currentConversionResults && window.currentConversionResults.length > 0) {
-                // Trigger the preview for the first result
                 const res = window.currentConversionResults[0];
-                console.log('🔍 BUTTON CLICK: Opening preview for =', res.filename, 'blob type =', res.blob.type);
-                openPreviewModal(res);
+                console.log('📥 downloading file =', res.filename);
+
+                const url = URL.createObjectURL(res.blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = res.filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                // Clear state after download to allow new conversion
+                mainConvertBtn.style.display = 'none';
+                mainPreviewBtn.style.display = 'none';
+                if (mainFileInput) mainFileInput.value = '';
+                uploadedFiles = [];
+                if (mainImageList) mainImageList.innerHTML = '';
             }
         };
     }
