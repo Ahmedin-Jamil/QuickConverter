@@ -23,121 +23,121 @@ export async function convertPdfToWord(file, onProgress = () => { }) {
 
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
+        const viewport = page.getViewport({ scale: 1.0 });
+        const pageHeight = viewport.height;
 
-        // --- 1. Fuzzy Line Grouping ---
-        // PDFs often have tiny vertical differences (e.g. 100.1 vs 100.0) for text on the "same" line.
+        // --- 1. Segment Grouping ---
         const items = textContent.items;
-        const lines = []; // Array of { y: number, items: [] }
 
-        // Sort items by Y (descending) first to process top-down
-        items.sort((a, b) => b.transform[5] - a.transform[5]);
+        // Sort: Top to Bottom, then Left to Right
+        items.sort((a, b) => {
+            const yDiff = b.transform[5] - a.transform[5];
+            if (Math.abs(yDiff) > 2) return yDiff;
+            return a.transform[4] - b.transform[4];
+        });
+
+        const segments = [];
+        let currentSegment = null;
 
         items.forEach(item => {
+            const x = item.transform[4];
             const y = item.transform[5];
-            // Try to find an existing line within tolerance (e.g., 2 points)
-            const match = lines.find(line => Math.abs(line.y - y) < 4);
+            // Approx font size from transform matrix (scale x element)
+            const fontSize = Math.sqrt(item.transform[0] * item.transform[0] + item.transform[1] * item.transform[1]);
+            const text = item.str;
+            const width = item.width;
+            // Note: some PDFs have width=0 or undefined for spaces, need handling?
+            // Usually valid text has width.
 
-            if (match) {
-                match.items.push(item);
-            } else {
-                lines.push({ y, items: [item] });
+            if (!text.trim()) return;
+
+            let appended = false;
+            if (currentSegment) {
+                const yDiff = Math.abs(currentSegment.y - y);
+                // expected next X = start + width
+                // check gap
+                const expectedX = currentSegment.x + currentSegment.width;
+                const gap = x - expectedX;
+
+                // Merge if same line (yDiff < 2) and close enough (gap small)
+                // Gap < fontSize * 1.5 allows for normal spaces. 
+                // Larger gap means new segment/column.
+                if (yDiff < 2 && gap > -5 && gap < (fontSize * 2)) {
+                    // Add space if gap suggests it
+                    if (gap > (fontSize * 0.2)) {
+                        currentSegment.text += " ";
+                    }
+                    currentSegment.text += text;
+                    currentSegment.width += (gap > 0 ? gap : 0) + width;
+                    appended = true;
+                }
+            }
+
+            if (!appended) {
+                if (currentSegment) segments.push(currentSegment);
+                currentSegment = {
+                    text: text,
+                    x: x,
+                    y: y,
+                    width: width,
+                    fontSize: fontSize,
+                    fontName: item.fontName,
+                    height: item.height || fontSize
+                };
             }
         });
+        if (currentSegment) segments.push(currentSegment);
 
-        // --- 2. Process Lines ---
+        // --- 2. Render Segments as Frames ---
         const children = [];
 
-        lines.forEach(line => {
-            // Sort items in line from left to right (X ascending)
-            const lineItems = line.items.sort((a, b) => a.transform[4] - b.transform[4]);
+        segments.forEach(seg => {
+            const xTwips = Math.round(seg.x * PT_TO_TWIP);
+            // Word Y = (PageHeight - PDF_Y - Ascent_Adjustment)
+            // Use 0.8 * fontSize as approx ascent
+            const yTwips = Math.round((pageHeight - seg.y - (seg.fontSize * 0.8)) * PT_TO_TWIP);
 
-            // Calculate paragraph indentation (First item's X)
-            const firstItemX = lineItems[0].transform[4];
-            const indentTwips = Math.round(firstItemX * PT_TO_TWIP);
+            // Safety check for negative positions
+            const safeX = Math.max(0, xTwips);
+            const safeY = Math.max(0, yTwips);
 
-            const paragraphChildren = [];
-            const tabStops = [];
+            const isBold = seg.fontName && (seg.fontName.toLowerCase().includes('bold') || seg.fontName.includes('Bd'));
+            const isItalic = seg.fontName && (seg.fontName.toLowerCase().includes('italic') || seg.fontName.includes('It'));
 
-            let lastXEnd = firstItemX; // Track where the last text ended
-
-            lineItems.forEach((item, index) => {
-                const currentX = item.transform[4];
-                const fontSize = Math.sqrt(item.transform[0] * item.transform[0] + item.transform[1] * item.transform[1]);
-                const charWidth = (item.width / item.str.length) || (fontSize * 0.5); // Approx char width if width is missing
-
-                // --- 3. Gap Detection (Tabs vs Spaces) ---
-                if (index > 0) {
-                    const gap = currentX - lastXEnd;
-
-                    // If gap is significant (e.g., > 2 spaces), treat as a Tab
-                    if (gap > (charWidth * 3)) {
-                        // Calculate exact tab position in Twips
-                        // Word tab stops are relative to the margin, or absolute? 
-                        // Usually relative to indent. Let's use absolute position from left margin.
-                        // Position = currentX * 20
-                        const tabPositionTwips = Math.round(currentX * PT_TO_TWIP);
-
-                        // Add a TabStop definition for this paragraph
-                        tabStops.push({
-                            type: "left",
-                            position: tabPositionTwips
-                        });
-
-                        paragraphChildren.push(new TextRun({
-                            text: "\t", // The tab character
-                            size: Math.round(fontSize * 2), // Maintain font size for the tab
-                        }));
-                    } else if (gap > (charWidth * 0.2)) {
-                        // Small gap: just add a space
-                        paragraphChildren.push(new TextRun({
-                            text: " ",
-                            size: Math.round(fontSize * 2)
-                        }));
-                    }
-                }
-
-                // Clean text
-                const text = item.str;
-                const isBold = item.fontName && (item.fontName.toLowerCase().includes('bold') || item.fontName.includes('Bd'));
-                const isItalic = item.fontName && (item.fontName.toLowerCase().includes('italic') || item.fontName.includes('It'));
-
-                paragraphChildren.push(new TextRun({
-                    text: text,
-                    size: Math.round(fontSize * 2), // Half-points
+            children.push(new Paragraph({
+                children: [new TextRun({
+                    text: seg.text,
+                    size: Math.round(seg.fontSize * 2), // Half-pts
                     bold: isBold,
                     italics: isItalic,
-                    font: {
-                        name: "Calibri" // Normalize font to look clean
-                    }
-                }));
-
-                // Update lastXEnd to the end of this item
-                lastXEnd = currentX + item.width;
-            });
-
-            if (paragraphChildren.length > 0) {
-                children.push(new Paragraph({
-                    children: paragraphChildren,
-                    indent: {
-                        left: indentTwips
+                    font: { name: "Calibri" }
+                })],
+                frame: {
+                    type: "absolute",
+                    position: {
+                        x: safeX,
+                        y: safeY
                     },
-                    tabStops: tabStops, // Apply the calculated tab stops
-                    spacing: {
-                        after: 120, // Small gap after paragraph
-                        line: 240   // Standard line height
-                    }
-                }));
-            }
+                    width: Math.round((seg.width + 10) * PT_TO_TWIP), // buffer width
+                    height: Math.round((seg.fontSize * 1.2) * PT_TO_TWIP),
+                    anchor: {
+                        horizontal: "page",
+                        vertical: "page"
+                    },
+                    rule: "exact"
+                },
+                spacing: { line: 240, before: 0, after: 0 }
+            }));
         });
 
-        // Fallback for empty pages (images)
-        if (children.length === 0) {
-            const viewport = page.getViewport({ scale: 2.0 });
+        // Fallback for empty pages
+        if (children.length === 0 && segments.length === 0) {
+            const viewportImg = page.getViewport({ scale: 2.0 });
             const canvas = document.createElement('canvas');
-            canvas.width = viewport.width;
-            canvas.height = viewport.height;
+            canvas.width = viewportImg.width;
+            canvas.height = viewportImg.height;
             const ctx = canvas.getContext('2d');
-            await page.render({ canvasContext: ctx, viewport }).promise;
+            await page.render({ canvasContext: ctx, viewport: viewportImg }).promise;
             const dataUrl = canvas.toDataURL('image/png');
             const bytes = Uint8Array.from(atob(dataUrl.split(',')[1]), c => c.charCodeAt(0));
 
@@ -146,7 +146,7 @@ export async function convertPdfToWord(file, onProgress = () => { }) {
                     data: bytes,
                     transformation: {
                         width: 600,
-                        height: Math.round(600 * (viewport.height / viewport.width))
+                        height: Math.round(600 * (viewportImg.height / viewportImg.width))
                     },
                     type: 'png'
                 })]
