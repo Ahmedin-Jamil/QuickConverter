@@ -460,20 +460,6 @@ async function createPreview(file) {
     return div;
 }
 
-// Utility: open upgrade modal with custom messages
-function showUpgradeModal(titleText, subText) {
-    const pricingModal = document.getElementById('pricingModal');
-    if (!pricingModal) {
-        alert(subText || titleText);
-        return;
-    }
-    const modalTitle = document.getElementById('proModalTitle');
-    const modalSub = document.getElementById('proModalSub');
-    if (modalTitle) modalTitle.textContent = titleText;
-    if (modalSub && subText) modalSub.textContent = subText;
-    pricingModal.classList.add('modal-visible');
-    document.body.style.overflow = 'hidden';
-}
 
 // Convert Files
 mainConvertBtn.style.display = 'none'; // Hide by default
@@ -497,48 +483,8 @@ mainFileInput.addEventListener('change', () => {
 mainConvertBtn.addEventListener('click', async () => {
     if (uploadedFiles.length === 0) return;
 
-    // Guest limit enforcement (3 conversions per browser session)
-    if (!window.currentUserId) {
-        const guestCount = parseInt(localStorage.getItem('guestConversions') || '0', 10);
-        if (guestCount >= 3) {
-            const authModal = document.getElementById('authModal');
-            if (authModal) {
-                authModal.classList.add('modal-visible');
-                document.body.style.overflow = 'hidden';
-            } else {
-                alert('Free guest limit reached. Create a free account to continue converting.');
-            }
-            return; // Block conversion
-        }
-        // Increment counter now
-        localStorage.setItem('guestConversions', guestCount + 1);
-    }
-
-    // Pro-tier / Free-tier quota enforcement (Persisted in Supabase)
-    if (window.currentUserId) {
-        // Special logic for Bank Statement (pdf-to-excel)
-        if (selectedTool === 'pdf-to-excel') {
-            const bankUsed = window.bankQuotaUsed || 0;
-            if (bankUsed >= 3 && !window.isUserPro) {
-                showUpgradeModal(
-                    "Bank Statement Limit Reached",
-                    "You've used your 3 free bank statement conversions. Upgrade to Pro for unlimited financial data extraction."
-                );
-                return;
-            }
-        } else {
-            const used = window.userQuotaUsed || 0;
-            const limit = window.userQuotaLimit || (window.isUserPro ? 1000 : 100);
-
-            if (used >= limit) {
-                showUpgradeModal(
-                    window.isUserPro ? "Plan limit reached" : "Monthly limit reached",
-                    window.isUserPro ? "You've used all 1000 conversions this month. Contact support for Enterprise." : "Upgrade to Pro to continue unlimited conversions."
-                );
-                return;
-            }
-        }
-    }
+    // Unified unlimited client-side processing
+    console.log('Unlimited conversion starting for tool:', selectedTool);
 
     mainConvertBtn.disabled = true;
     const originalHTML = mainConvertBtn.innerHTML;
@@ -568,6 +514,90 @@ mainConvertBtn.addEventListener('click', async () => {
                 results.push(converted);
                 trackConversion('Homepage Image Converter', file.type.split('/')[1] || 'unknown', selectedFormat, file.size);
             }
+            else if (selectedTool === 'pdf-to-word') {
+                const { convertPdfToWord } = await import('./tools/pdfToWordLogic.js');
+                resultBlob = await convertPdfToWord(file, (p) => {
+                    mainConvertBtn.innerHTML = `<span class="loading">Rendering PDF (${p}%)...</span>`;
+                });
+                resultFilename = file.name.replace(/\.[^/.]+$/, "") + ".docx";
+                results.push({ blob: resultBlob, filename: resultFilename, size: resultBlob.size });
+                trackConversion('Homepage PDF to Word', 'pdf', 'docx', file.size);
+            }
+            else if (selectedTool === 'csv-to-docs') {
+                // Quick CSV to Word conversion
+                const csvData = await file.text();
+                const { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType } = await import('docx');
+                const rows = csvData.split('\n').map(row => row.split(','));
+
+                const tableRows = rows.map(row => new TableRow({
+                    children: row.map(cell => new TableCell({
+                        children: [new Paragraph(cell.trim())],
+                        width: { size: 100 / row.length, type: WidthType.PERCENTAGE }
+                    }))
+                }));
+
+                const doc = new Document({
+                    sections: [{
+                        children: [new Table({ rows: tableRows, width: { size: 100, type: WidthType.PERCENTAGE } })]
+                    }]
+                });
+
+                resultBlob = await Packer.toBlob(doc);
+                resultFilename = file.name.replace(/\.[^/.]+$/, "") + ".docx";
+                results.push({ blob: resultBlob, filename: resultFilename, size: resultBlob.size });
+                trackConversion('Homepage CSV to Word', 'csv', 'docx', file.size);
+            }
+            else if (selectedTool === 'excel-to-pdf' || selectedTool === 'excel-to-docs') {
+                // Implement Excel client-side
+                const arrayBuffer = await file.arrayBuffer();
+                const workbook = XLSX.read(arrayBuffer);
+                const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+                const jsonData = XLSX.utils.sheet_to_json(firstSheet, { header: 1 });
+
+                if (selectedTool === 'excel-to-docs') {
+                    const { Document, Packer, Paragraph, Table, TableRow, TableCell, WidthType } = await import('docx');
+                    const tableRows = jsonData.map(row => new TableRow({
+                        children: row.map(cell => new TableCell({
+                            children: [new Paragraph(String(cell || '').trim())],
+                            width: { size: 100 / row.length, type: WidthType.PERCENTAGE }
+                        }))
+                    }));
+
+                    const doc = new Document({
+                        sections: [{
+                            children: [new Table({ rows: tableRows, width: { size: 100, type: WidthType.PERCENTAGE } })]
+                        }]
+                    });
+
+                    resultBlob = await Packer.toBlob(doc);
+                    resultFilename = file.name.replace(/\.[^/.]+$/, "") + ".docx";
+                } else {
+                    // Excel to PDF
+                    const { jsPDF } = await import('jspdf');
+                    const { default: autoTable } = await import('jspdf-autotable');
+                    const doc = new jsPDF();
+                    autoTable(doc, { head: [jsonData[0]], body: jsonData.slice(1) });
+                    resultBlob = doc.output('blob');
+                    resultFilename = file.name.replace(/\.[^/.]+$/, "") + ".pdf";
+                }
+
+                results.push({ blob: resultBlob, filename: resultFilename, size: resultBlob.size });
+                trackConversion(`Homepage Excel to ${selectedTool.includes('pdf') ? 'PDF' : 'Word'}`, 'xlsx', selectedTool.includes('pdf') ? 'pdf' : 'docx', file.size);
+            }
+            else if (selectedTool === 'ocr-converter') {
+                mainConvertBtn.innerHTML = `<span class="loading">Reading Text...</span>`;
+                const { createWorker } = await import('tesseract.js');
+                const worker = await createWorker();
+                // No need to loadLanguage/initialize in v4+ generally if using the simple API, 
+                // but let's be safe for v5/v6
+                const { data: { text } } = await worker.recognize(file);
+                await worker.terminate();
+
+                resultBlob = new Blob([text], { type: 'text/plain' });
+                resultFilename = file.name.replace(/\.[^/.]+$/, "") + "_ocr.txt";
+                results.push({ blob: resultBlob, filename: resultFilename, size: resultBlob.size });
+                trackConversion('Homepage OCR', 'image', 'txt', file.size);
+            }
             else if (selectedTool === 'pdf-to-image') {
                 // Client-side PDF to Image using PDF.js
                 resultBlob = await convertPdfToImageClientSide(file);
@@ -582,8 +612,8 @@ mainConvertBtn.addEventListener('click', async () => {
                 trackConversion('Homepage CSV to PDF', 'csv', 'pdf', file.size);
             }
             else {
-                // Fallback for tools that need more work
-                alert(`${selectedTool.replace(/-/g, ' ').toUpperCase()} is being migrated to 100% client-side. Coming soon!`);
+                console.warn('Unknown tool or not fully implemented client-side:', selectedTool);
+                alert(`The ${selectedTool.replace(/-/g, ' ').toUpperCase()} tool is being optimized for your browser. Please try another tool in the meantime.`);
             }
         }
 
@@ -619,12 +649,13 @@ async function convertPdfToImageClientSide(file) {
 
 async function convertCsvToPdfClientSide(file) {
     const text = await file.text();
+    const { default: Papa } = await import('papaparse');
     const { data } = Papa.parse(text);
-    const { jsPDF } = window.jspdf;
+    const { jsPDF } = await import('jspdf');
     const doc = new jsPDF();
     doc.setFontSize(10);
     let y = 20;
-    data.slice(0, 50).forEach(row => {
+    data.forEach(row => {
         doc.text(row.join(" | ").substring(0, 100), 10, y);
         y += 7;
         if (y > 280) { doc.addPage(); y = 20; }
@@ -750,12 +781,31 @@ function displayResults(results) {
                     <div style="font-size: 4rem; margin-bottom: 20px;">✅</div>
                     <h2 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 12px; color: #0f172a;">Conversion Successful!</h2>
                     <p style="color: #64748b; font-size: 1.1rem; line-height: 1.6; margin-bottom: 24px;">
-                        Your professional extraction is complete. You can now view your records in the History tab.
+                        Your document is ready! Click the button below to download it.
                     </p>
                     <div style="display: flex; flex-direction: column; gap: 12px;">
-                        <button class="btn btn-primary" id="successModalOkBtn">OK</button>
+                        <button class="btn btn-primary" id="successDownloadBtn">Download DOCX</button>
+                        <button class="btn btn-secondary" id="successModalOkBtn">Done</button>
                     </div>
                 `;
+
+                // Set up Download button click handler
+                const downloadBtn = document.getElementById('successDownloadBtn');
+                if (downloadBtn) {
+                    downloadBtn.onclick = () => {
+                        if (window.currentConversionResults && window.currentConversionResults.length > 0) {
+                            const res = window.currentConversionResults[0];
+                            const url = URL.createObjectURL(res.blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = res.filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            document.body.removeChild(a);
+                            URL.revokeObjectURL(url);
+                        }
+                    };
+                }
 
                 // Set up OK button click handler
                 const okBtn = document.getElementById('successModalOkBtn');
@@ -1021,14 +1071,14 @@ async function openPreviewModal(res) {
                     </div>
                     <h3 style="font-size: 1.5rem; font-weight: 700; color: #1e293b; margin-bottom: 12px;">Unable to read file data</h3>
                     <p style="color: #64748b; font-size: 1.1rem; max-width: 500px; margin: 0 auto 24px;">
-                        The uploaded file appears to be empty or contains unreadable data. Please ensure the file is a valid bank statement with clear transaction records.
+                        The uploaded file appears to be empty or contains unreadable data. Please ensure the file is a valid CSV or Excel file.
                     </p>
                     <div style="background: #f8fafc; padding: 16px; border-radius: 6px; text-align: left; max-width: 450px; margin: 0 auto; border: 1px solid #e2e8f0; font-size: 0.9rem; color: #475569;">
                         <strong>Common issues:</strong>
                         <ul style="margin: 8px 0 0 20px; padding: 0;">
                             <li>File is password protected</li>
-                            <li>Corrupted CSV structure</li>
-                            <li>No transaction data detected in the first sheet</li>
+                            <li>Corrupted file structure</li>
+                            <li>Incompatible format version</li>
                         </ul>
                     </div>
                 </div>`;
@@ -1664,182 +1714,9 @@ async function openPreviewModal(res) {
         });
     });
 
-    // Add event listeners for real-time preview updates
-    const dataTools = ['csv-to-pdf', 'csv-to-docs', 'excel-to-pdf', 'excel-to-docs'];
-    const shouldEnableReconvert = dataTools.includes(selectedTool) && uploadedFiles.length > 0;
-
-    if (shouldEnableReconvert) {
-        const reconvertWithSettings = async () => {
-            try {
-                console.log('🔄 Reconverting with settings:', {
-                    layout: layoutSelect.value,
-                    labels: labelsToggle.checked,
-                    pagination: paginationToggle.checked,
-                    date: dateToggle.checked,
-                    time: timeToggle.checked
-                });
-
-                content.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;min-height:400px;"><div class="spinner"></div><div style="margin-left:1rem;color:#64748b;">Updating preview...</div></div>';
-
-                const formData = new FormData();
-                formData.append('file', uploadedFiles[0]);
-                if (window.currentUserId) {
-                    formData.append('user_id', window.currentUserId);
-                }
-                formData.append('layout_mode', layoutSelect.value);
-                formData.append('show_labels', labelsToggle.checked);
-                formData.append('show_pagination', paginationToggle.checked);
-                formData.append('show_date', dateToggle.checked);
-                formData.append('show_time', timeToggle.checked);
-
-                // Determine endpoint based on selected tool
-                let endpoint = '/convert/csv-to-pdf';
-                let fileExtension = '.pdf';
-                if (selectedTool === 'csv-to-docs') { endpoint = '/convert/csv-to-docs'; fileExtension = '.docx'; }
-                else if (selectedTool === 'excel-to-pdf') { endpoint = '/convert/excel-to-pdf'; fileExtension = '.pdf'; }
-                else if (selectedTool === 'excel-to-docs') { endpoint = '/convert/excel-to-docs'; fileExtension = '.docx'; }
-
-                const response = await fetch(`${import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000'}${endpoint}`, {
-                    method: 'POST',
-                    body: formData
-                });
-
-                if (!response.ok) throw new Error('Conversion failed');
-
-                const newBlob = await response.blob();
-                const newUrl = URL.createObjectURL(newBlob);
-                const newFilename = uploadedFiles[0].name.replace(/\.(csv|xlsx|xls)$/i, fileExtension);
-
-                const csvText = await uploadedFiles[0].text();
-                const { data } = Papa.parse(csvText, { header: true });
-                const columns = Object.keys(data[0] || {});
-                const columnCount = columns.length;
-                const estimatedWidth = columnCount * 35;
-                const isLandscape = estimatedWidth > 210 && layoutSelect.value === 'table';
-
-                if (orientationInfo && orientationText) {
-                    orientationInfo.style.display = 'block';
-                    if (layoutSelect.value === 'list') {
-                        orientationText.innerHTML = `<strong>Portrait A4</strong><br/>${columnCount} columns<br/>List view format`;
-                    } else if (isLandscape) {
-                        orientationText.innerHTML = `<strong>Landscape</strong><br/>${columnCount} columns detected<br/>Wide table optimized`;
-                    } else {
-                        orientationText.innerHTML = `<strong>Portrait A4</strong><br/>${columnCount} columns<br/>Standard table format`;
-                    }
-                }
-
-                const modalContainer = modal.querySelector('.modal-container');
-                if (modalContainer) {
-                    if (fileExtension === '.docx') {
-                        modalContainer.style.maxWidth = '900px';
-                        modalContainer.style.width = '70vw';
-                    } else {
-                        modalContainer.style.maxWidth = '1200px';
-                        modalContainer.style.width = '85vw';
-                    }
-                }
-
-                content.innerHTML = '';
-
-                if (fileExtension === '.docx') {
-                    // For DOCX files, show enhanced preview mockup
-                    const showLabels = labelsToggle?.checked || true;
-                    const showPagination = paginationToggle?.checked || false;
-
-                    content.innerHTML = `
-                        <div style="padding: 30px; background: white; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); max-width: 700px; margin: 0 auto;">
-                            <div style="text-align: center; margin-bottom: 24px;">
-                                <div style="display: inline-block; padding: 12px 24px; background: #217346; color: white; border-radius: 6px; font-weight: 600; margin-bottom: 16px;">
-                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="white" style="vertical-align: middle; margin-right: 8px;">
-                                        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-                                        <polyline points="14 2 14 8 20 8"></polyline>
-                                    </svg>
-                                    Word Document Preview
-                                </div>
-                                <p style="color: #64748b; font-size: 0.95rem; margin: 0;">Your document will be generated with the following settings:</p>
-                            </div>
-                            
-                            <div style="background: #f8fafc; padding: 20px; border-radius: 6px; border-left: 4px solid #217346; margin-bottom: 20px;">
-                                <h4 style="margin: 0 0 12px 0; color: #0f172a; font-size: 1rem;">📄 Document Structure</h4>
-                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 0.9rem;">
-                                    <div><strong>Layout:</strong> ${layoutSelect.value === 'list' ? 'List View (Portrait)' : 'Table View (Landscape)'}</div>
-                                    <div><strong>Orientation:</strong> ${layoutSelect.value === 'list' ? 'Portrait A4' : 'Landscape'}</div>
-                                    <div><strong>Record Labels:</strong> ${showLabels ? '✓ Enabled' : '✗ Disabled'}</div>
-                                    <div><strong>Page Numbers:</strong> ${showPagination ? '✓ Enabled' : '✗ Disabled'}</div>
-                                </div>
-                            </div>
-                            
-                            <div style="background: white; border: 2px dashed #e2e8f0; border-radius: 6px; padding: 24px; text-align: center;">
-                                <div style="color: #94a3b8; font-size: 3rem; margin-bottom: 12px;">📊</div>
-                                <h4 style="color: #475569; margin: 0 0 8px 0;">Document Content Ready</h4>
-                                <p style="color: #64748b; font-size: 0.9rem; margin: 0 0 16px 0;">
-                                    ${layoutSelect.value === 'list' ? 'Each record will be displayed in a vertical list format with labeled fields.' : 'Data will be organized in a professional table layout.'}
-                                </p>
-                                <p style="color: #64748b; font-size: 0.85rem; margin: 0;">
-                                    <strong>Note:</strong> Word documents cannot be previewed in-browser. Download to view the formatted document.
-                                </p>
-                            </div>
-                            
-                            <div style="margin-top: 20px; padding: 16px; background: #dcfce7; border-radius: 6px; border-left: 4px solid #16a34a;">
-                                <div style="display: flex; align-items: start; gap: 12px;">
-                                    <div style="color: #16a34a; font-size: 1.5rem;">✓</div>
-                                    <div style="flex: 1;">
-                                        <strong style="color: #166534; display: block; margin-bottom: 4px;">Updated!</strong>
-                                        <p style="color: #15803d; font-size: 0.85rem; margin: 0;">
-                                            Your document has been regenerated with the new settings. Download to view the changes.
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    `;
-                } else {
-                    // For PDF files, show iframe preview
-                    const previewContainer = document.createElement('div');
-                    previewContainer.style.width = '100%';
-                    previewContainer.style.display = 'flex';
-                    previewContainer.style.justifyContent = 'center';
-                    previewContainer.style.alignItems = 'center';
-
-                    const newIframe = document.createElement('iframe');
-                    newIframe.src = newUrl;
-                    newIframe.style.border = 'none';
-                    newIframe.style.borderRadius = '8px';
-                    newIframe.style.boxShadow = '0 2px 16px rgba(0,0,0,0.1)';
-
-                    if (isLandscape) {
-                        newIframe.style.width = '100%';
-                        newIframe.style.maxWidth = '1000px';
-                        newIframe.style.height = '600px';
-                    } else {
-                        newIframe.style.width = '100%';
-                        newIframe.style.maxWidth = '700px';
-                        newIframe.style.height = '750px';
-                    }
-
-                    previewContainer.appendChild(newIframe);
-                    content.appendChild(previewContainer);
-                }
-
-                const sidebarDownloadContainer = document.getElementById('sidebarDownloadContainer');
-                if (sidebarDownloadContainer) {
-                    sidebarDownloadContainer.style.display = 'block';
-                    const buttonText = fileExtension === '.docx' ? 'Download Word' : 'Download PDF';
-                    sidebarDownloadContainer.innerHTML = `<a class='btn btn-primary' href='${newUrl}' download='${newFilename}' style='width: 100%; font-size: 1rem; padding: 0.875rem 1.5rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem;'><svg width="20" height="20" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>${buttonText}</a>`;
-                }
-
-            } catch (error) {
-                content.innerHTML = '<div style="padding:40px;text-align:center;color:#ef4444;">Failed to update preview. Please try again.</div>';
-                console.error('Preview update error:', error);
-            }
-        };
-
-        if (layoutSelect) layoutSelect.addEventListener('change', reconvertWithSettings);
-        if (labelsToggle) labelsToggle.addEventListener('change', reconvertWithSettings);
-        if (paginationToggle) paginationToggle.addEventListener('change', reconvertWithSettings);
-        if (dateToggle) dateToggle.addEventListener('change', reconvertWithSettings);
-        if (timeToggle) timeToggle.addEventListener('change', reconvertWithSettings);
-    }
+    // Note: Live re-conversion with settings is currently disabled in client-side mode
+    if (layoutContainer) layoutContainer.style.display = 'none';
+    if (customSettings) customSettings.style.display = 'none';
 
     closeBtn.onclick = () => {
         modal.style.display = 'none';

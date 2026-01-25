@@ -17,6 +17,8 @@
     "docx": "^9.5.1",
     "heic2any": "^0.0.4",
     "html5-qrcode": "^2.3.8",
+    "jspdf": "^4.0.0",
+    "jspdf-autotable": "^5.0.7",
     "papaparse": "^5.5.3",
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^5.4.530",
