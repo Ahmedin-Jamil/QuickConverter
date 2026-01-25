@@ -15,84 +15,122 @@ export async function convertPdfToWord(file, onProgress = () => { }) {
     const numPages = pdf.numPages;
     const docSections = [];
 
+    // Conversion factor: 1 PDF point = 20 Twips (Word unit)
+    const PT_TO_TWIP = 20;
+
     for (let i = 1; i <= numPages; i++) {
         if (onProgress) onProgress(Math.round((i / numPages) * 90));
 
         const page = await pdf.getPage(i);
         const textContent = await page.getTextContent();
 
-        // Basic text reconstruction
-        // Organize items by Y position (lines)
-        const lines = {};
-        textContent.items.forEach(item => {
-            const y = Math.round(item.transform[5]); // Y coordinate
-            if (!lines[y]) lines[y] = [];
-            lines[y].push(item);
+        // --- 1. Fuzzy Line Grouping ---
+        // PDFs often have tiny vertical differences (e.g. 100.1 vs 100.0) for text on the "same" line.
+        const items = textContent.items;
+        const lines = []; // Array of { y: number, items: [] }
+
+        // Sort items by Y (descending) first to process top-down
+        items.sort((a, b) => b.transform[5] - a.transform[5]);
+
+        items.forEach(item => {
+            const y = item.transform[5];
+            // Try to find an existing line within tolerance (e.g., 2 points)
+            const match = lines.find(line => Math.abs(line.y - y) < 4);
+
+            if (match) {
+                match.items.push(item);
+            } else {
+                lines.push({ y, items: [item] });
+            }
         });
 
-        // Sort lines from top to bottom (PDF coordinates start from bottom-left)
-        const sortedY = Object.keys(lines).sort((a, b) => b - a);
-
+        // --- 2. Process Lines ---
         const children = [];
 
-        const viewport = page.getViewport({ scale: 1.0 }); // Use 1.0 for standard point calculations
+        lines.forEach(line => {
+            // Sort items in line from left to right (X ascending)
+            const lineItems = line.items.sort((a, b) => a.transform[4] - b.transform[4]);
 
-        sortedY.forEach(y => {
-            // Sort items in line from left to right
-            const lineItems = lines[y].sort((a, b) => a.transform[4] - b.transform[4]);
-
-            // Calculate indentation of the first item
-            // 72 DPI points to Twips (1/20 pt) conversion: 1 pt = 20 twips
+            // Calculate paragraph indentation (First item's X)
             const firstItemX = lineItems[0].transform[4];
-            const indentationTwips = Math.round(firstItemX * 20);
+            const indentTwips = Math.round(firstItemX * PT_TO_TWIP);
 
             const paragraphChildren = [];
-            let lastX = firstItemX;
+            const tabStops = [];
+
+            let lastXEnd = firstItemX; // Track where the last text ended
 
             lineItems.forEach((item, index) => {
                 const currentX = item.transform[4];
+                const fontSize = Math.sqrt(item.transform[0] * item.transform[0] + item.transform[1] * item.transform[1]);
+                const charWidth = (item.width / item.str.length) || (fontSize * 0.5); // Approx char width if width is missing
 
-                // Check for gap (Tab simulation for columns)
-                if (index > 0 && (currentX - lastX) > 20) { // >20pt gap, likely a new column
-                    paragraphChildren.push(new TextRun({
-                        text: "\t", // Insert tab character
-                    }));
+                // --- 3. Gap Detection (Tabs vs Spaces) ---
+                if (index > 0) {
+                    const gap = currentX - lastXEnd;
+
+                    // If gap is significant (e.g., > 2 spaces), treat as a Tab
+                    if (gap > (charWidth * 3)) {
+                        // Calculate exact tab position in Twips
+                        // Word tab stops are relative to the margin, or absolute? 
+                        // Usually relative to indent. Let's use absolute position from left margin.
+                        // Position = currentX * 20
+                        const tabPositionTwips = Math.round(currentX * PT_TO_TWIP);
+
+                        // Add a TabStop definition for this paragraph
+                        tabStops.push({
+                            type: "left",
+                            position: tabPositionTwips
+                        });
+
+                        paragraphChildren.push(new TextRun({
+                            text: "\t", // The tab character
+                            size: Math.round(fontSize * 2), // Maintain font size for the tab
+                        }));
+                    } else if (gap > (charWidth * 0.2)) {
+                        // Small gap: just add a space
+                        paragraphChildren.push(new TextRun({
+                            text: " ",
+                            size: Math.round(fontSize * 2)
+                        }));
+                    }
                 }
 
-                // Font size extraction (approximate from transform[0] which is scaleX)
-                // Default size is usually 12 if unknown
-                const fontSize = Math.round(item.transform[0]);
-                const isBold = item.fontName && item.fontName.toLowerCase().includes('bold');
+                // Clean text
+                const text = item.str;
+                const isBold = item.fontName && (item.fontName.toLowerCase().includes('bold') || item.fontName.includes('Bd'));
+                const isItalic = item.fontName && (item.fontName.toLowerCase().includes('italic') || item.fontName.includes('It'));
 
                 paragraphChildren.push(new TextRun({
-                    text: item.str,
-                    size: fontSize * 2, // docx uses half-points (e.g. 24 = 12pt)
-                    bold: isBold
+                    text: text,
+                    size: Math.round(fontSize * 2), // Half-points
+                    bold: isBold,
+                    italics: isItalic,
+                    font: {
+                        name: "Calibri" // Normalize font to look clean
+                    }
                 }));
 
-                // Update lastX to end of this item (approximate width calculation is hard without font metrics, 
-                // so we use start + length * avg_char_width or just currentX + width if available in item.width)
-                lastX = currentX + (item.width || (item.str.length * (fontSize * 0.5)));
+                // Update lastXEnd to the end of this item
+                lastXEnd = currentX + item.width;
             });
 
             if (paragraphChildren.length > 0) {
-                // Add tab stop if we used tabs
-                const tabStops = [];
-                // Simple heuristic: add a tab stop every 3 inches just in case
-                // Or better: rely on default tabs. 
-                // A more advanced math would calculate tab stops based on the "gap" positions.
-
                 children.push(new Paragraph({
                     children: paragraphChildren,
                     indent: {
-                        left: indentationTwips
+                        left: indentTwips
                     },
-                    spacing: { after: 120 } // Reduced spacing for tighter layout
+                    tabStops: tabStops, // Apply the calculated tab stops
+                    spacing: {
+                        after: 120, // Small gap after paragraph
+                        line: 240   // Standard line height
+                    }
                 }));
             }
         });
 
-        // If page is empty (e.g. scanned image PDF), fallback to image rendering
+        // Fallback for empty pages (images)
         if (children.length === 0) {
             const viewport = page.getViewport({ scale: 2.0 });
             const canvas = document.createElement('canvas');
