@@ -35,15 +35,59 @@ export async function convertPdfToWord(file, onProgress = () => { }) {
 
         const children = [];
 
+        const viewport = page.getViewport({ scale: 1.0 }); // Use 1.0 for standard point calculations
+
         sortedY.forEach(y => {
             // Sort items in line from left to right
             const lineItems = lines[y].sort((a, b) => a.transform[4] - b.transform[4]);
-            const text = lineItems.map(item => item.str).join(' '); // Simple join
 
-            if (text.trim().length > 0) {
+            // Calculate indentation of the first item
+            // 72 DPI points to Twips (1/20 pt) conversion: 1 pt = 20 twips
+            const firstItemX = lineItems[0].transform[4];
+            const indentationTwips = Math.round(firstItemX * 20);
+
+            const paragraphChildren = [];
+            let lastX = firstItemX;
+
+            lineItems.forEach((item, index) => {
+                const currentX = item.transform[4];
+
+                // Check for gap (Tab simulation for columns)
+                if (index > 0 && (currentX - lastX) > 20) { // >20pt gap, likely a new column
+                    paragraphChildren.push(new TextRun({
+                        text: "\t", // Insert tab character
+                    }));
+                }
+
+                // Font size extraction (approximate from transform[0] which is scaleX)
+                // Default size is usually 12 if unknown
+                const fontSize = Math.round(item.transform[0]);
+                const isBold = item.fontName && item.fontName.toLowerCase().includes('bold');
+
+                paragraphChildren.push(new TextRun({
+                    text: item.str,
+                    size: fontSize * 2, // docx uses half-points (e.g. 24 = 12pt)
+                    bold: isBold
+                }));
+
+                // Update lastX to end of this item (approximate width calculation is hard without font metrics, 
+                // so we use start + length * avg_char_width or just currentX + width if available in item.width)
+                lastX = currentX + (item.width || (item.str.length * (fontSize * 0.5)));
+            });
+
+            if (paragraphChildren.length > 0) {
+                // Add tab stop if we used tabs
+                const tabStops = [];
+                // Simple heuristic: add a tab stop every 3 inches just in case
+                // Or better: rely on default tabs. 
+                // A more advanced math would calculate tab stops based on the "gap" positions.
+
                 children.push(new Paragraph({
-                    children: [new TextRun(text)],
-                    spacing: { after: 200 } // Add some spacing between lines
+                    children: paragraphChildren,
+                    indent: {
+                        left: indentationTwips
+                    },
+                    spacing: { after: 120 } // Reduced spacing for tighter layout
                 }));
             }
         });
