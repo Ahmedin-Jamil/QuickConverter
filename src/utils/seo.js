@@ -6,9 +6,9 @@
  */
 export function updateMetaTags(options = {}) {
     const {
-        title = 'QuickConvert - Free Online File Converter',
-        description = 'Free online file converter. Convert images, PDFs, and more.',
-        keywords = 'file converter, image converter, free converter',
+        title = 'QuickConvert - Free Online File Convert',
+        description = 'Free online file convert. Convert images, PDFs, and more.',
+        keywords = 'file convert, image convert, free convert',
         canonical = window.location.href,
         ogImage = '/og-image.jpg',
         ogType = 'website'

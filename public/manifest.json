@@ -1,7 +1,7 @@
 {
     "name": "QuickConvert",
     "short_name": "QuickConvert",
-    "description": "Free online file converter for images, PDFs, and more",
+    "description": "Free online file convert for images, PDFs, and more",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",
