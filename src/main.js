@@ -9,7 +9,17 @@ const API_BASE_URL = 'http://localhost:5000';
 // Supabase Configuration
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-const supabase = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
+let supabase = null;
+
+if (supabaseUrl && supabaseKey) {
+  try {
+    supabase = window.supabase ? window.supabase.createClient(supabaseUrl, supabaseKey) : null;
+  } catch (err) {
+    console.warn("Supabase initialization failed (check config):", err);
+  }
+} else {
+  console.warn("Supabase credentials missing. Auth features will be disabled.");
+}
 
 // State
 let currentTool = 'bank_to_excel';
