@@ -381,18 +381,26 @@ async function logEvent(type, element) {
 
 async function fetchHistory() {
   if (!currentUser) return;
-  const tbody = document.getElementById('history-table').querySelector('tbody');
-  tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Loading history...</td></tr>';
+  const container = document.getElementById('history-container');
+  const emptyState = document.getElementById('history-empty');
+  // Use new ID or fallback to querySelector
+  const tbody = document.getElementById('history-body') || document.getElementById('history-table').querySelector('tbody');
+
+  tbody.innerHTML = '';
 
   try {
     const resp = await fetch(`${API_BASE_URL}/user/history?user_id=${currentUser.id}`);
     const data = await resp.json();
 
-    tbody.innerHTML = '';
-    if (data.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">No conversions yet.</td></tr>';
+    if (!data || data.length === 0) {
+      if (container) container.classList.add('custom-hidden');
+      if (emptyState) emptyState.classList.remove('custom-hidden');
       return;
     }
+
+    // Has data
+    if (emptyState) emptyState.classList.add('custom-hidden');
+    if (container) container.classList.remove('custom-hidden');
 
     data.forEach(item => {
       const row = document.createElement('tr');
@@ -407,7 +415,10 @@ async function fetchHistory() {
       tbody.appendChild(row);
     });
   } catch (err) {
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:var(--accent)">Failed to load history.</td></tr>';
+    console.warn("Failed to load history", err);
+    // On error, show empty state with safety check
+    if (container) container.classList.add('custom-hidden');
+    if (emptyState) emptyState.classList.remove('custom-hidden');
   }
 }
 

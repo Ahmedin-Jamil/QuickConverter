@@ -394,22 +394,34 @@
       <section id="history-view" class="workspace hidden"
         style="text-align:left; border:none; background:none; padding:0; max-width:100%">
         <h2 style="margin-bottom:1.5rem">Conversion History</h2>
-        <div
-          style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:1rem; padding:1.5rem; overflow-x:auto;">
-          <table class="table-preview" id="history-table">
-            <thead>
-              <tr>
-                <th>Date</th>
-                <th>Rows</th>
-                <th>Latency</th>
-                <th>DQ Score</th>
-                <th>Hash</th>
-              </tr>
-            </thead>
-            <tbody>
-              <!-- History items here -->
-            </tbody>
-          </table>
+
+        <!-- Empty State -->
+        <div id="history-empty" class="empty-state custom-hidden">
+          <div class="empty-icon">🕒</div>
+          <h3>No conversions yet</h3>
+          <p>Your processed documents will appear here.</p>
+          <button class="btn-primary" onclick="document.querySelector('[data-tool=\'bank_to_excel\']').click()">Start
+            Converting</button>
+        </div>
+
+        <!-- Populated State -->
+        <div id="history-container" class="history-card custom-hidden">
+          <div style="overflow-x:auto;">
+            <table class="table-preview" id="history-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Rows</th>
+                  <th>Latency</th>
+                  <th>DQ Score</th>
+                  <th>Hash</th>
+                </tr>
+              </thead>
+              <tbody id="history-body">
+                <!-- History items here -->
+              </tbody>
+            </table>
+          </div>
         </div>
       </section>
 
