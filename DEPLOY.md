@@ -1,4 +1,4 @@
-## Automated Deployment: GitHub to GoDaddy
+## Automated Deployment: GitHub to GoDaddy (Frontend)
 
 This is the most professional way to deploy. Every time you `git push`, your site will automatically build and update on GoDaddy.
 
@@ -23,8 +23,37 @@ I have created a file at `.github/workflows/deploy.yml`. When you push this to G
 
 ---
 
+## 🚀 Step 2: Deploying the Backend (API)
+
+GoDaddy basic hosting doesn't support Python/Flask easily. We recommend **Render.com** (it's free and fast).
+
+### 1. Connect Render to GitHub
+1. Go to [Render.com](https://render.com/) and sign up.
+2. Click **New** > **Web Service**.
+3. Connect your GitHub account and select your `QuickConverter` repo.
+
+### 2. Configure Build Settings
+- **Runtime:** `Python 3`
+- **Build Command:** `pip install -r requirements.txt`
+- **Start Command:** `gunicorn --chdir backend app:app`
+
+### 3. Add Environment Variables
+In the **Environment** tab on Render, add these:
+- `SUPABASE_URL`: (Copy from your Supabase dashboard)
+- `SUPABASE_KEY`: (Your `anon` key)
+- `SUPABASE_SERVICE_ROLE_KEY`: (Your `service_role` key)
+- `ADMIN_SECRET`: (e.g., `qc_super_secret_admin_2026`)
+- `API_BASE_URL`: (Leave empty for now, it's used if the backend needs to know its own URL)
+
+### 4. Connect Frontend to Backend
+Once Render gives you a URL (e.g., `https://qc-api.onrender.com`), do this:
+1. Open [main.js](file:///c:/Users/john-PC/Desktop/QFE/src/main.js)
+2. Change `const API_BASE_URL = 'http://localhost:5000';` to your Render URL.
+3. `git commit` and `git push`. GitHub will automatically update GoDaddy!
+
+---
+
 ### Manual Upload (Alternative)
-... (existing instructions)
 - **HTTPS:** Ensure GoDaddy's "AutoSSL" is active for `q-convert.com` so your site uses `https://`.
-- **Clean Slate:** If you had a previous version of the site on GoDaddy, delete the old files from `public_html` before uploading the new `dist` contents.
-- **Node.js:** You do **NOT** need to install Node.js on GoDaddy. Node is only used on your computer to build the files. GoDaddy just hosts the static HTML/JS.
+- **Node.js:** You do **NOT** need to install Node.js on GoDaddy. Node is used locally to build `dist`.
+

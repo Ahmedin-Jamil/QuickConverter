@@ -8,8 +8,9 @@ from datetime import datetime
 import logging
 
 # Setup Logging
+log_file = os.environ.get('LOG_FILE', 'server.log')
 logging.basicConfig(
-    filename='server.log',
+    filename=log_file,
     level=logging.DEBUG,
     format='%(asctime)s %(levelname)s: %(message)s'
 )
@@ -43,7 +44,8 @@ except ImportError as e:
 
 
 app = Flask(__name__)
-CORS(app)
+# Enable CORS for production (Allow specific domain or all for simplicity in MVP)
+CORS(app, resources={r"/*": {"origins": ["https://q-convert.com", "http://localhost:5173", "http://localhost:3000"]}})
 
 # Folders
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'temp_uploads')
@@ -235,7 +237,7 @@ def convert_document():
                 "processing_time_ms": last_stats["processing_time_ms"],
                 "dq_summary": last_stats["dq_stats"],
                 "preview": final_result.get("preview_data", []),
-                "download_url": f"http://localhost:5000/download/{out_filename}",
+                "download_url": f"{API_BASE_URL}/download/{out_filename}",
                 "document_hash": last_stats["document_hash"],
                 "usage": {"used": db_logger.get_user_usage_count(user_id=user_id, ip=ip), "limit": usage_limit},
                 "db_log": db_status
@@ -351,5 +353,10 @@ def admin_verify():
     
     return jsonify(status)
 
+# Environment variables for dynamic URL (used in success frame)
+API_BASE_URL = os.environ.get('API_BASE_URL', 'http://localhost:5000')
+
 if __name__ == '__main__':
-    app.run(debug=True, port=5000)
+    # Use environment port for Render/Railway
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port, debug=os.environ.get('FLASK_DEBUG', 'False') == 'True')

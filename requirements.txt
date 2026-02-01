@@ -1,0 +1,9 @@
+flask
+flask-cors
+pdfplumber
+pandas
+openpyxl
+gunicorn
+supabase
+requests
+python-dotenv

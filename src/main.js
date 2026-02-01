@@ -2,6 +2,10 @@
  * main.js - QDoc Platform Logic
  * Handles tool selection, file uploads, and deterministic pipeline visualization.
  */
+// --- CONFIGURATION ---
+// Set this to your live backend URL when deploying (e.g., 'https://your-app.onrender.com')
+const API_BASE_URL = 'http://localhost:5000';
+
 // Supabase Configuration
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -345,7 +349,7 @@ function setupNav() {
 
 async function logEvent(type, element) {
   try {
-    fetch('http://localhost:5000/log/event', {
+    fetch(`${API_BASE_URL}/log/event`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -493,7 +497,7 @@ async function processFile(file) {
   }
 
   try {
-    const response = await fetch('http://localhost:5000/convert/document', {
+    const response = await fetch(`${API_BASE_URL}/convert/document`, {
       method: 'POST',
       body: formData
     });
@@ -625,7 +629,7 @@ function renderResults(data) {
   }
 
   const downloadBtn = document.getElementById('download-btn');
-  downloadBtn.href = data.download_url;
+  downloadBtn.href = `${API_BASE_URL}/download/${data.filename}`;
 
   // Render Preview Table (with Category and Flag)
   const tbody = document.getElementById('preview-table').querySelector('tbody');
