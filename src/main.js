@@ -108,12 +108,16 @@ async function init() {
 
   // Check Auth State
   if (supabase) {
-    const { data: { session } } = await supabase.auth.getSession();
-    handleAuthStateChange(session);
-
-    supabase.auth.onAuthStateChange((_event, session) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
       handleAuthStateChange(session);
-    });
+
+      supabase.auth.onAuthStateChange((_event, session) => {
+        handleAuthStateChange(session);
+      });
+    } catch (err) {
+      console.error("Supabase session check failed:", err);
+    }
   }
 }
 
@@ -130,29 +134,31 @@ async function handleAuthStateChange(session) {
     }
 
     // Fetch Profile for Tier
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', currentUser.id)
-      .single();
+    if (supabase) {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', currentUser.id)
+        .single();
 
-    if (profile) {
-      userTier = profile.tier || 'guest';
-      document.getElementById('user-name').textContent = profile.full_name || currentUser.email.split('@')[0];
-      const displayTier = userTier === 'pro' ? 'Unlimited' : `${QUOTA_LIMITS[userTier]} Conversions`;
-      const tierLabel = document.getElementById('user-tier-label');
-      tierLabel.textContent = displayTier.toUpperCase();
-      tierLabel.className = `tier-tag ${userTier === 'pro' ? 'pro-tier' : ''}`;
-      document.getElementById('user-avatar').textContent = (profile.full_name || 'U')[0].toUpperCase();
+      if (profile) {
+        userTier = profile.tier || 'guest';
+        document.getElementById('user-name').textContent = profile.full_name || currentUser.email.split('@')[0];
+        const displayTier = userTier === 'pro' ? 'Unlimited' : `${QUOTA_LIMITS[userTier]} Conversions`;
+        const tierLabel = document.getElementById('user-tier-label');
+        tierLabel.textContent = displayTier.toUpperCase();
+        tierLabel.className = `tier-tag ${userTier === 'pro' ? 'pro-tier' : ''}`;
+        document.getElementById('user-avatar').textContent = (profile.full_name || 'U')[0].toUpperCase();
 
-      // Update badge display
-      document.getElementById('display-user-name').textContent = profile.full_name || currentUser.email.split('@')[0];
-      const tierBadge = document.getElementById('display-tier-badge');
-      tierBadge.textContent = displayTier.toUpperCase();
-      tierBadge.className = `tier-tag ${userTier === 'pro' ? 'pro-tier' : ''}`;
+        // Update badge display
+        document.getElementById('display-user-name').textContent = profile.full_name || currentUser.email.split('@')[0];
+        const tierBadge = document.getElementById('display-tier-badge');
+        tierBadge.textContent = displayTier.toUpperCase();
+        tierBadge.className = `tier-tag ${userTier === 'pro' ? 'pro-tier' : ''}`;
 
-      fetchUsage();
-      updateSizeLimitUI();
+        fetchUsage();
+        updateSizeLimitUI();
+      }
     }
   } else {
     currentUser = null;
@@ -379,8 +385,8 @@ async function fetchHistory() {
   tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">Loading history...</td></tr>';
 
   try {
-    const res = await fetch(`http://localhost:5000/user/history?user_id=${currentUser.id}`);
-    const data = await res.json();
+    const resp = await fetch(`${API_BASE_URL}/user/history?user_id=${currentUser.id}`);
+    const data = await resp.json();
 
     tbody.innerHTML = '';
     if (data.length === 0) {
