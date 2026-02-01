@@ -1,47 +1,8 @@
 User-agent: *
 Allow: /
+Disallow: /temp_uploads/
+Disallow: /backend/
+Disallow: /node_modules/
+Disallow: /dist/
 
-# Explicitly allow AI crawlers to index our tools for GEO (Generative Engine Optimization)
-User-agent: GPTBot
-Allow: /
-
-User-agent: ChatGPT-User
-Allow: /
-
-User-agent: Google-Extended
-Allow: /
-
-User-agent: PerplexityBot
-Allow: /
-
-User-agent: anthropic-ai
-Allow: /
-
-User-agent: Claude-WebLib-Service
-Allow: /
-
-User-agent: ClaudeBot
-Allow: /
-
-User-agent: Applebot-Extended
-Allow: /
-
-User-agent: FacebookBot
-Allow: /
-
-User-agent: xAI
-Allow: /
-
-User-agent: Grok
-Allow: /
-
-User-agent: Cohere-ai
-Allow: /
-
-User-agent: Omgili
-Allow: /
-
-User-agent: CrawlQ
-Allow: /
-
-Sitemap: https://quickconvert.com/sitemap.xml
+Sitemap: https://q-convert.com/sitemap.xml
