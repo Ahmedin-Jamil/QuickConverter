@@ -11,14 +11,27 @@ node_modules
 dist
 dist-ssr
 *.local
+.env
+.env.*
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# Python
+myenv/
+venv/
+ENV/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Test/Output
+tests/
+test_*.py
+outputs/
+temp_uploads/
+verify_output*.txt
+*.xlsx
+*.csv
+
+# Editor
+.vscode/
+.idea/
 .DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
