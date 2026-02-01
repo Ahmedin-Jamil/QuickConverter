@@ -709,3 +709,40 @@ h1 {
     background: #fee2e2;
     color: #991b1b;
 }
+
+/* --- AdSense Containers --- */
+.ad-container-sidebar {
+    margin: 1rem 0.75rem;
+    padding: 0.5rem;
+    background-color: var(--bg-tertiary);
+    /* Light gray placeholder */
+    border: 1px dashed var(--border);
+    border-radius: 0.5rem;
+    text-align: center;
+    min-height: 250px;
+    /* Standard Sidebar Ad Height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ad-container-banner {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background-color: var(--bg-tertiary);
+    border: 1px dashed var(--border);
+    border-radius: 0.5rem;
+    text-align: center;
+    min-height: 90px;
+    /* Leaderboard Banner Height */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.ad-placeholder-text {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    font-weight: 600;
+    opacity: 0.5;
+}
