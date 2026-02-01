@@ -299,8 +299,12 @@ def lemonsqueezy_webhook():
         status = attributes.get('status')
         subscription_id = obj.get('id')
 
-        if user_id and status in ['active', 'on_trial']:
-            db_logger.update_user_tier(user_id, 'pro', subscription_id)
+        if user_id:
+            if status in ['active', 'on_trial']:
+                db_logger.update_user_tier(user_id, 'pro', subscription_id)
+            elif status in ['cancelled', 'expired', 'unpaid']:
+                # Downgrade user if subscription is no longer valid
+                db_logger.update_user_tier(user_id, 'free', subscription_id)
                 
     return jsonify({"status": "success"}), 200
 

@@ -161,7 +161,6 @@ async function handleAuthStateChange(session) {
       }
     }
   } else {
-    // No session (Guest)
     currentUser = null;
     userTier = 'guest';
     authGroup.classList.remove('hidden');
