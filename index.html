@@ -429,20 +429,54 @@
       <section id="subscription-view" class="workspace hidden"
         style="text-align:left; border:none; background:none; padding:0;">
         <h2 style="margin-bottom:1.5rem">Subscription Management</h2>
-        <div class="instruction-card" style="max-width:500px">
-          <h4>Current Plan</h4>
-          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:2rem;">
-            <div>
-              <p id="sub-plan-name" style="font-size:1.5rem; font-weight:800; color:var(--text-main)">Free Tier</p>
-              <p style="color:var(--text-muted); font-size:0.85rem">Limited to 5 free conversions</p>
+
+        <div
+          style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:2rem; align-items: start;">
+          <!-- Plan Details Card -->
+          <div class="instruction-card" style="margin:0; width:100%">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
+              <h4 style="margin:0">Current Plan</h4>
+              <span id="sub-badge" class="tier-tag">GUEST</span>
             </div>
-            <span id="sub-badge" class="tier-tag">GUEST</span>
+
+            <div style="margin-bottom:2rem;">
+              <p id="sub-plan-name"
+                style="font-size:1.8rem; font-weight:800; color:var(--text-main); margin-bottom:0.25rem;">Free Tier</p>
+              <p id="sub-plan-desc" style="color:var(--text-muted); font-size:0.95rem;">Basic access for individuals</p>
+              <div id="sub-price-tag"
+                style="margin-top:1rem; font-size:1.25rem; font-weight:700; color:var(--accent); display:none;">
+                $9.00<span style="font-size:0.8rem; font-weight:400; color:var(--text-muted)"> / month</span>
+              </div>
+            </div>
+
+            <button id="manage-sub-btn" class="btn-large" style="width:100%">Upgrade to Pro — $9.00</button>
+            <p id="sub-portal-link" class="hidden" style="margin-top:1rem; text-align:center;">
+              <a href="#" target="_blank"
+                style="color:var(--text-muted); font-size:0.8rem; text-decoration:none;">Manage
+                in Billing Portal →</a>
+            </p>
           </div>
-          <button id="manage-sub-btn" class="btn-large" style="width:100%">Upgrade to Pro</button>
-          <p id="sub-portal-link" class="hidden" style="margin-top:1rem; text-align:center;">
-            <a href="#" target="_blank" style="color:var(--text-muted); font-size:0.8rem; text-decoration:none;">Manage
-              in Billing Portal →</a>
-          </p>
+
+          <!-- Benefits Card (Only shown for non-pro) -->
+          <div id="pro-benefits-card" class="instruction-card"
+            style="margin:0; background: rgba(16, 185, 129, 0.03); border-color: var(--accent);">
+            <h4 style="color:var(--accent)">QC Pro Benefits</h4>
+            <ul style="list-style:none; padding:0; margin:1.5rem 0; display:grid; gap:0.75rem;">
+              <li style="display:flex; gap:0.5rem; font-size:0.9rem; color:var(--text-main)">✅
+                <strong>Unlimited</strong> Conversions</li>
+              <li style="display:flex; gap:0.5rem; font-size:0.9rem; color:var(--text-main)">✅ <strong>50MB
+                  Line</strong> File Support</li>
+              <li style="display:flex; gap:0.5rem; font-size:0.9rem; color:var(--text-main)">✅ <strong>Priority</strong>
+                OCR Processing</li>
+              <li style="display:flex; gap:0.5rem; font-size:0.9rem; color:var(--text-main)">✅ <strong>Advanced</strong>
+                Data Cleaning</li>
+              <li style="display:flex; gap:0.5rem; font-size:0.9rem; color:var(--text-main)">✅ <strong>Full</strong>
+                Reconciliation Reports</li>
+            </ul>
+            <p style="font-size:0.75rem; color:var(--text-muted); line-height:1.4;">
+              Unlock the full power of QuickConvert for your business or accounting firm.
+            </p>
+          </div>
         </div>
       </section>
 

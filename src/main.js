@@ -424,9 +424,31 @@ async function fetchHistory() {
 
 function updateSubscriptionUI() {
   const isPro = userTier === 'pro';
-  document.getElementById('sub-plan-name').textContent = isPro ? 'Pro Platform' : 'Free Tier';
+  const isFree = userTier === 'free';
+  const isGuest = userTier === 'guest';
+
+  // Update Plan Name & Badge
+  document.getElementById('sub-plan-name').textContent = isPro ? 'QC Pro Platform' : (isFree ? 'Free Forever' : 'Guest Tier');
   document.getElementById('sub-badge').textContent = userTier.toUpperCase();
   document.getElementById('sub-badge').className = `tier-tag ${isPro ? 'pro-tier' : ''}`;
+
+  // Update Description (Guest: 3, Free: 10, Pro: Unlimited)
+  const descEl = document.getElementById('sub-plan-desc');
+  if (isPro) {
+    descEl.textContent = 'Full access to all professional features.';
+  } else if (isFree) {
+    descEl.textContent = 'Limited to 10 conversions per month.';
+  } else {
+    descEl.textContent = 'Limited to 3 conversions per session.';
+  }
+
+  // Handle Price Tag Visibility (Only show if Pro)
+  const priceTag = document.getElementById('sub-price-tag');
+  if (priceTag) priceTag.style.display = isPro ? 'block' : 'none';
+
+  // Handle Benefits Card (Hide if already pro)
+  const benefitsCard = document.getElementById('pro-benefits-card');
+  if (benefitsCard) benefitsCard.style.display = isPro ? 'none' : 'block';
 
   const manageBtn = document.getElementById('manage-sub-btn');
   const portalLink = document.getElementById('sub-portal-link');
@@ -435,10 +457,12 @@ function updateSubscriptionUI() {
     manageBtn.textContent = 'Active Subscription';
     manageBtn.classList.add('btn-ghost');
     manageBtn.style.cursor = 'default';
+    manageBtn.onclick = null;
     portalLink.classList.remove('hidden');
   } else {
-    manageBtn.textContent = 'Upgrade to Pro';
+    manageBtn.textContent = 'Upgrade to Pro — $9.00';
     manageBtn.classList.remove('btn-ghost');
+    manageBtn.style.cursor = 'pointer';
     manageBtn.onclick = () => {
       const checkoutUrl = new URL(import.meta.env.VITE_LEMON_SQUEEZY_CHECKOUT_URL);
       if (currentUser) checkoutUrl.searchParams.set('checkout[custom][user_id]', currentUser.id);
