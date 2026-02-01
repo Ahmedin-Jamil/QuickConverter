@@ -4,7 +4,7 @@
  */
 // --- CONFIGURATION ---
 // Set this to your live backend URL when deploying (e.g., 'https://your-app.onrender.com')
-const API_BASE_URL = 'http://localhost:5000';
+const API_BASE_URL = 'https://quickconverter-2wn9.onrender.com';
 
 // Supabase Configuration
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
