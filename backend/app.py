@@ -60,7 +60,8 @@ etl_pipeline = ETLPipeline()
 db_logger = SupabaseLogger()
 
 # Environment variables for dynamic URL (used in success frame & logs)
-API_BASE_URL = os.environ.get('API_BASE_URL', 'http://localhost:5000').rstrip('/')
+# Defaulting to the production URL to ensure reliability if Render environment variables aren't yet configured.
+API_BASE_URL = os.environ.get('API_BASE_URL', 'https://quickconverter-2wn9.onrender.com').rstrip('/')
 
 import requests
 
