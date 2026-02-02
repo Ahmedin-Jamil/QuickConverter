@@ -127,11 +127,6 @@ async function handleAuthStateChange(session) {
     authGroup.classList.add('hidden');
     profileSection.classList.remove('hidden');
 
-    // Admin Access Check
-    const adminEmail = 'admin@q-convert.com'; // Replace with your actual email
-    if (currentUser.email === adminEmail) {
-      document.getElementById('admin-nav-group').classList.remove('hidden');
-    }
 
     // Fetch Profile for Tier
     if (supabase) {
@@ -165,7 +160,6 @@ async function handleAuthStateChange(session) {
     userTier = 'guest';
     authGroup.classList.remove('hidden');
     profileSection.classList.add('hidden');
-    document.getElementById('admin-nav-group').classList.add('hidden');
 
     // Reset badge
     document.getElementById('display-user-name').textContent = 'Guest User';
@@ -353,14 +347,6 @@ function setupNav() {
     });
   });
 
-  // Global Click Tracking for Admin Analytics
-  document.addEventListener('click', (e) => {
-    const target = e.target.closest('button, a, .nav-item');
-    if (target) {
-      const label = target.innerText || target.getAttribute('aria-label') || target.id || 'unlabeled_element';
-      logEvent('ui_click', label.trim());
-    }
-  });
 }
 
 async function logEvent(type, element) {

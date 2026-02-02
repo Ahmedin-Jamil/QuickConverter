@@ -63,28 +63,6 @@ db_logger = SupabaseLogger()
 # Defaulting to the production URL to ensure reliability if Render environment variables aren't yet configured.
 API_BASE_URL = os.environ.get('API_BASE_URL', 'https://quickconverter-2wn9.onrender.com').rstrip('/')
 
-import requests
-
-# Geo-IP is used solely for abuse prevention and guest-tier usage enforcement,
-# not analytics or profiling. This protects against automated scraping and 
-# ensures fair distribution of guest resources.
-GEO_CACHE = {}
-
-def get_geo_info(ip):
-    if not ip or ip == '127.0.0.1':
-        return {"country": "Local", "city": "Developer"}
-    if ip in GEO_CACHE:
-        return GEO_CACHE[ip]
-    try:
-        r = requests.get(f"http://ip-api.com/json/{ip}", timeout=2)
-        if r.status_code == 200:
-            data = r.json()
-            geo = {"country": data.get("country", "Unknown"), "city": data.get("city", "Unknown")}
-            GEO_CACHE[ip] = geo
-            return geo
-    except:
-        pass
-    return {"country": "Unknown", "city": "Unknown"}
 
 @app.route('/user/usage', methods=['GET'])
 def get_user_usage():
@@ -103,24 +81,6 @@ def get_user_usage():
     used = db_logger.get_user_usage_count(user_id=user_id)
     return jsonify({"used": used, "limit": 10})
 
-@app.route('/admin/verify', methods=['GET'])
-def verify_admin_config():
-    """Debug endpoint to verify Supabase Admin connectivity."""
-    admin_secret = request.headers.get('X-Admin-Secret')
-    if admin_secret != os.environ.get('ADMIN_SECRET', 'qc_super_secret_admin_2026'):
-        return jsonify({"error": "Unauthorized"}), 403
-        
-    status = {
-        "supabase_url": db_logger.url,
-        "supabase_anon_configured": db_logger.client is not None,
-        "supabase_admin_configured": db_logger.admin_client is not None,
-        "env_check": {
-            "URL": "SUPABASE_URL" in os.environ,
-            "KEY": "SUPABASE_KEY" in os.environ,
-            "SERVICE_ROLE": "SUPABASE_SERVICE_ROLE_KEY" in os.environ
-        }
-    }
-    return jsonify(status)
 
 import json
 from flask import Response, stream_with_context
@@ -141,7 +101,7 @@ def convert_document():
     
     # ─── 0. Grab Metadata Before Request Finishes ───
     ip = request.remote_addr
-    geo = get_geo_info(ip)
+    geo = {"country": "Disabled", "city": "Disabled"}
     browser = request.headers.get('User-Agent', 'Unknown')
     file_ext = file.filename.split('.')[-1].lower()
 
@@ -262,7 +222,7 @@ def log_event():
     element = data.get('element')
     user_id = data.get('user_id')
     ip = request.remote_addr
-    geo = get_geo_info(ip)
+    geo = {"country": "Disabled", "city": "Disabled"}
     
     db_logger.log_event(event_type, element, user_id=user_id, geo=geo)
     return jsonify({"status": "success"})
@@ -324,42 +284,8 @@ def get_subscription_portal():
     portal_url = "https://quickconvert.lemonsqueezy.com/billing"
     return jsonify({"portal_url": portal_url})
 
-@app.route('/admin/stats', methods=['GET'])
-def get_admin_dashboard_stats():
-    admin_secret = request.headers.get('X-Admin-Secret')
-    if admin_secret != os.environ.get('ADMIN_SECRET', 'qc_super_secret_admin_2026'):
-        return jsonify({"error": "Unauthorized"}), 403
-
-    return jsonify({
-        "summary": db_logger.get_admin_stats(),
-        "trends": db_logger.get_conversion_trends()
-    })
 
 
-@app.route('/admin/verify', methods=['GET'])
-def admin_verify():
-    """Diagnostic endpoint to verify Supabase connections."""
-    status = {
-        "supabase_url": db_logger.url,
-        "client_auth": db_logger.client is not None,
-        "admin_auth": db_logger.admin_client is not None,
-        "env_check": {
-            "URL": "SET" if os.environ.get("SUPABASE_URL") else "MISSING",
-            "SERVICE_ROLE": "SET" if os.environ.get("SUPABASE_SERVICE_ROLE_KEY") else "MISSING"
-        }
-    }
-    
-    # Simple Query Test
-    if db_logger.admin_client:
-        try:
-            res = db_logger.admin_client.table("conversions").select("id").limit(1).execute()
-            status["db_query"] = "SUCCESS"
-            status["conversions_count"] = len(res.data)
-        except Exception as e:
-            status["db_query"] = "FAILED"
-            status["error"] = str(e)
-    
-    return jsonify(status)
 
 # API_BASE_URL moved to top for scope visibility
 
