@@ -59,6 +59,9 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 etl_pipeline = ETLPipeline()
 db_logger = SupabaseLogger()
 
+# Environment variables for dynamic URL (used in success frame & logs)
+API_BASE_URL = os.environ.get('API_BASE_URL', 'http://localhost:5000').rstrip('/')
+
 import requests
 
 # Geo-IP is used solely for abuse prevention and guest-tier usage enforcement,
@@ -237,7 +240,7 @@ def convert_document():
                 "processing_time_ms": last_stats["processing_time_ms"],
                 "dq_summary": last_stats["dq_stats"],
                 "preview": final_result.get("preview_data", []),
-                "download_url": f"{request.host_url.rstrip('/')}/download/{out_filename}",
+                "download_url": f"{API_BASE_URL}/download/{out_filename}",
                 "document_hash": last_stats["document_hash"],
                 "usage": {"used": db_logger.get_user_usage_count(user_id=user_id, ip=ip), "limit": usage_limit},
                 "db_log": db_status
@@ -357,8 +360,7 @@ def admin_verify():
     
     return jsonify(status)
 
-# Environment variables for dynamic URL (used in success frame)
-API_BASE_URL = os.environ.get('API_BASE_URL', 'http://localhost:5000')
+# API_BASE_URL moved to top for scope visibility
 
 if __name__ == '__main__':
     # Use environment port for Render/Railway
