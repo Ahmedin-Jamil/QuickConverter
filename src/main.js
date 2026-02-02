@@ -680,7 +680,7 @@ function renderResults(data) {
   }
 
   const downloadBtn = document.getElementById('download-btn');
-  downloadBtn.href = `${API_BASE_URL}/download/${data.filename}`;
+  downloadBtn.href = data.download_url;
 
   // Render Preview Table (with Category and Flag)
   const tbody = document.getElementById('preview-table').querySelector('tbody');
