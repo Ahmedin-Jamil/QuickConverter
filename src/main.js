@@ -570,12 +570,13 @@ function updateProgressUI(p, status, subStatus = "", isError = false) {
     ring.style.borderColor = isError ? 'var(--error)' : 'var(--accent)';
   }
 
-  // Real-time Timer Logic
-  if (processingStartTime > 0 && p < 100 && !isError) {
-    const elapsed = ((Date.now() - processingStartTime) / 1000).toFixed(1);
-    subStatusTxt.innerHTML = `${subStatus} <span style="color:var(--accent); font-weight:700; margin-left:8px;">⏱️ ${elapsed}s</span>`;
-  } else {
-    subStatusTxt.innerText = subStatus;
+  // Update Status Text only (Timer handled by startTimer)
+  subStatusTxt.innerText = subStatus;
+
+  // Hide estimation box if error occurs
+  const estBox = document.getElementById('estimated-time-container');
+  if (estBox) {
+    estBox.style.display = isError ? 'none' : 'flex';
   }
 }
 
@@ -583,20 +584,19 @@ function startTimer() {
   processingStartTime = Date.now();
   if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(() => {
-    // Only update timer if we haven't hit 100% and no error
     const percentTxt = document.getElementById('progress-percent');
-    const isError = percentTxt && percentTxt.innerText === "!";
-    const p = parseInt(percentTxt ? percentTxt.innerText : "0") || 0;
+    const subStatusTxt = document.getElementById('progress-sub-status');
 
-    if (processingStartTime > 0 && p < 100 && !isError) {
+    // Check if we are in an error state (percentTxt would be "!")
+    const isError = percentTxt && percentTxt.innerText === "!";
+    const pStr = percentTxt ? percentTxt.innerText.replace('%', '') : "0";
+    const p = parseInt(pStr) || 0;
+
+    if (processingStartTime > 0 && p < 100 && !isError && subStatusTxt) {
       const elapsed = ((Date.now() - processingStartTime) / 1000).toFixed(1);
-      const subStatusTxt = document.getElementById('progress-sub-status');
-      if (subStatusTxt) {
-        // Find existing text before timer span if possible
-        const currentHTML = subStatusTxt.innerHTML;
-        const baseText = currentHTML.split('<span')[0].trim();
-        subStatusTxt.innerHTML = `${baseText} <span style="color:var(--accent); font-weight:700; margin-left:8px;">⏱️ ${elapsed}s</span>`;
-      }
+      // Keep base status text but append timer
+      const baseText = subStatusTxt.innerText.split('⏱️')[0].trim();
+      subStatusTxt.innerHTML = `${baseText} <span style="color:var(--accent); font-weight:700; margin-left:8px;">⏱️ ${elapsed}s</span>`;
     }
   }, 100);
 }
