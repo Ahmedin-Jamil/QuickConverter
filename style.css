@@ -52,6 +52,58 @@
     /* Reduced space from 'onvert' text */
 }
 
+/* Workspace Secondary Ad Panel */
+.workspace-ad-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 2rem;
+    height: 100%;
+}
+
+.ad-side-card {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;
+}
+
+.ad-label {
+    font-size: 0.7rem;
+    font-weight: 800;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.ad-side-content {
+    flex-grow: 1;
+    background: rgba(0, 0, 0, 0.05);
+    border: 1px dashed var(--border);
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Ensure workspace-container works with hidden */
+.workspace-container.hidden {
+    display: none !important;
+}
+
+@media (max-width: 1100px) {
+    .workspace-ad-panel {
+        display: none;
+    }
+}
+
 /* ... other styles reset ... */
 * {
     box-sizing: border-box;
@@ -725,17 +777,24 @@ h1 {
     }
 }
 
+
+/* ... existing styles ... */
+
 .percent-display {
     font-size: 2.5rem;
     font-family: 'Outfit', sans-serif;
     font-weight: 800;
     color: var(--accent);
     z-index: 2;
+    transition: color 0.3s ease;
 }
 
 .processing-details {
     width: 100%;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .status-main {
@@ -744,41 +803,47 @@ h1 {
     margin-bottom: 1.5rem;
     color: var(--text-primary);
     letter-spacing: -0.02em;
+    transition: color 0.3s ease;
 }
 
 .progress-bar-outer {
     height: 6px;
-    width: 100%;
-    background: rgba(255, 255, 255, 0.05);
+    background: var(--bg-tertiary);
     border-radius: 3px;
-    overflow: hidden;
     margin-bottom: 1.5rem;
+    overflow: hidden;
+    width: 100%;
 }
 
 .progress-bar-inner {
     height: 100%;
+    background: var(--accent);
     width: 0%;
-    background: linear-gradient(90deg, var(--accent), #34d399);
-    box-shadow: 0 0 15px var(--accent-glow);
-    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width 0.4s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease;
 }
 
 .status-sub {
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-weight: 500;
-    margin-bottom: 2rem;
 }
 
 .estimation-box {
-    background: rgba(16, 185, 129, 0.03);
-    border: 1px solid var(--accent-soft);
-    padding: 1rem 1.5rem;
-    border-radius: var(--radius-md);
+    margin-top: 3rem;
+    padding: 1.5rem;
+    background: rgba(0, 0, 0, 0.02);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
     display: flex;
     justify-content: space-between;
     align-items: center;
+    width: 100%;
 }
+
+
 
 .est-label {
     font-size: 0.7rem;

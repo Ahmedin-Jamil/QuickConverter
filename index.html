@@ -332,23 +332,35 @@
       </section>
 
       <!-- Processing View -->
-      <section id="processing-view" class="workspace hidden">
-        <div class="processing-state-card">
-          <div class="loader-container">
-            <div class="pulse-ring"></div>
-            <div id="progress-percent" class="percent-display">0%</div>
-          </div>
-
-          <div class="processing-details">
-            <h3 id="progress-status" class="status-main">Initiating Extraction Pipeline...</h3>
-            <div class="progress-bar-outer">
-              <div id="conversion-progress-bar" class="progress-bar-inner"></div>
+      <section id="processing-view" class="workspace-container hidden">
+        <div class="workspace">
+          <div class="processing-state-card">
+            <div class="loader-container">
+              <div class="pulse-ring"></div>
+              <div id="progress-percent" class="percent-display">0%</div>
             </div>
-            <p id="progress-sub-status" class="status-sub">Detecting High-Density Structures...</p>
 
-            <div id="estimated-time-container" class="estimation-box">
-              <span class="est-label">Estimated Completion</span>
-              <span id="estimated-time-val" class="est-val">Calculating...</span>
+            <div class="processing-details">
+              <h3 id="progress-status" class="status-main">Initiating Extraction Pipeline...</h3>
+              <div class="progress-bar-outer">
+                <div id="conversion-progress-bar" class="progress-bar-inner"></div>
+              </div>
+              <p id="progress-sub-status" class="status-sub">Detecting High-Density Structures...</p>
+
+              <div id="estimated-time-container" class="estimation-box">
+                <span class="est-label">Estimated Completion</span>
+                <span id="estimated-time-val" class="est-val">Calculating...</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Secondary Ad Panel -->
+        <div class="workspace-ad-panel">
+          <div class="ad-side-card">
+            <p class="ad-label">Partner Advertisement</p>
+            <div class="ad-side-content">
+              <p class="ad-placeholder-text">Premium Ad Space</p>
             </div>
           </div>
         </div>

@@ -542,18 +542,36 @@ const TIER_LIMITS = {
   'pro': 50 * 1024 * 1024
 };
 
-function updateProgressUI(p, status, subStatus = "") {
+function updateProgressUI(p, status, subStatus = "", isError = false) {
   const bar = document.getElementById('conversion-progress-bar');
   const percentTxt = document.getElementById('progress-percent');
   const statusTxt = document.getElementById('progress-status');
   const subStatusTxt = document.getElementById('progress-sub-status');
+  const loaderContainer = document.querySelector('.loader-container');
 
-  if (bar) bar.style.width = `${p}%`;
-  if (percentTxt) percentTxt.innerText = `${p}%`;
-  if (statusTxt) statusTxt.innerText = p === 100 ? "Success!" : status;
+  if (bar) {
+    bar.style.width = `${p}%`;
+    bar.style.background = isError ? 'var(--error)' : 'var(--accent)';
+  }
+
+  if (percentTxt) {
+    percentTxt.innerText = isError ? "!" : `${p}%`;
+    percentTxt.style.color = isError ? 'var(--error)' : 'var(--accent)';
+  }
+
+  if (statusTxt) {
+    statusTxt.innerText = p === 100 ? "Success!" : status;
+    statusTxt.style.color = isError ? 'var(--error)' : 'var(--text-primary)';
+  }
+
+  // Handle Pulse Ring Color on Error
+  const ring = document.querySelector('.pulse-ring');
+  if (ring) {
+    ring.style.borderColor = isError ? 'var(--error)' : 'var(--accent)';
+  }
 
   // Real-time Timer Logic
-  if (processingStartTime > 0 && p < 100) {
+  if (processingStartTime > 0 && p < 100 && !isError) {
     const elapsed = ((Date.now() - processingStartTime) / 1000).toFixed(1);
     subStatusTxt.innerHTML = `${subStatus} <span style="color:var(--accent); font-weight:700; margin-left:8px;">⏱️ ${elapsed}s</span>`;
   } else {
@@ -563,13 +581,22 @@ function updateProgressUI(p, status, subStatus = "") {
 
 function startTimer() {
   processingStartTime = Date.now();
+  if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(() => {
-    const elapsed = ((Date.now() - processingStartTime) / 1000).toFixed(1);
-    const subStatusTxt = document.getElementById('progress-sub-status');
-    if (subStatusTxt && processingStartTime > 0) {
-      // We keep the last subStatus but update the timer
-      const currentText = subStatusTxt.innerText.split('⏱️')[0];
-      subStatusTxt.innerHTML = `${currentText} <span style="color:var(--accent); font-weight:700; margin-left:8px;">⏱️ ${elapsed}s</span>`;
+    // Only update timer if we haven't hit 100% and no error
+    const percentTxt = document.getElementById('progress-percent');
+    const isError = percentTxt && percentTxt.innerText === "!";
+    const p = parseInt(percentTxt ? percentTxt.innerText : "0") || 0;
+
+    if (processingStartTime > 0 && p < 100 && !isError) {
+      const elapsed = ((Date.now() - processingStartTime) / 1000).toFixed(1);
+      const subStatusTxt = document.getElementById('progress-sub-status');
+      if (subStatusTxt) {
+        // Find existing text before timer span if possible
+        const currentHTML = subStatusTxt.innerHTML;
+        const baseText = currentHTML.split('<span')[0].trim();
+        subStatusTxt.innerHTML = `${baseText} <span style="color:var(--accent); font-weight:700; margin-left:8px;">⏱️ ${elapsed}s</span>`;
+      }
     }
   }, 100);
 }
@@ -623,8 +650,10 @@ async function processFile(file) {
 
     if (!response.ok) {
       const errData = await response.json();
-      alert(`Error: ${errData.error || 'Request failed'}`);
-      resetUI();
+      stopTimer();
+      updateProgressUI(0, "Conversion Failed", errData.error || 'Request failed', true);
+      // Add a "Back to Upload" button dynamically if it doesn't exist
+      addErrorResetButton();
       return;
     }
 
@@ -659,10 +688,12 @@ async function processFile(file) {
           } else if (chunk.status === 'failed' || chunk.status === 'limit_reached') {
             stopTimer();
             if (chunk.status === 'limit_reached') {
+              updateProgressUI(0, "Limit Reached", "Monthly quota exceeded. Please upgrade.", true);
               showLimitModal();
+              addErrorResetButton();
             } else {
-              alert(`Error: ${chunk.error || 'Processing failed'}`);
-              resetUI();
+              updateProgressUI(0, "Processing Error", chunk.error || 'Extraction failed', true);
+              addErrorResetButton();
             }
             return;
           } else if (typeof chunk.p !== 'undefined') {
@@ -691,8 +722,25 @@ async function processFile(file) {
   } catch (err) {
     stopTimer();
     console.error(err);
-    alert('Network error or server failed to respond.');
-    resetUI();
+    updateProgressUI(0, "Network Error", "Server failed to respond. Please check connection.", true);
+    addErrorResetButton();
+  }
+}
+
+function addErrorResetButton() {
+  const card = document.querySelector('.processing-details');
+  if (card && !document.getElementById('error-reset-btn')) {
+    const btn = document.createElement('button');
+    btn.id = 'error-reset-btn';
+    btn.className = 'btn-secondary';
+    btn.style.marginTop = '2rem';
+    btn.style.width = '100%';
+    btn.innerText = 'Back to Workspace';
+    btn.onclick = () => {
+      resetUI();
+      btn.remove();
+    };
+    card.appendChild(btn);
   }
 }
 
