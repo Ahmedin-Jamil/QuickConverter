@@ -71,7 +71,7 @@
 <body>
   <div id="sidebar-overlay" class="sidebar-overlay"></div>
   <div class="mobile-header">
-    <a href="/" class="logo-container">
+    <a href="/" class="logo-container" title="QuickConverter - Professional Financial Document Processing">
       <img src="QC Logo Green Gradient.svg" alt="QC Logo" class="logo-img">
       <span class="logo-text">onvert</span>
     </a>
@@ -106,59 +106,54 @@
         <p class="nav-label">Workflows</p>
 
         <button class="nav-item active" data-tool="bank_to_excel">
-          <div class="icon-frame icon-bank">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M3 21h18M5 21v-7h8v7m-4-7v7M2 10l10-7 10 7M2 10v4h20v-4" />
-            </svg>
-          </div>
-          <span class="nav-text">Bank Statement</span>
-        </button>
-
-        <button class="nav-item" data-tool="pdf_to_csv">
-          <div class="icon-frame icon-pdf">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <path d="M9 15h6"></path>
-              <path d="M9 19h6"></path>
-              <path d="M9 11h6"></path>
-            </svg>
-          </div>
-          <span class="nav-text">PDF to CSV</span>
-        </button>
-
-        <button class="nav-item" data-tool="csv_to_excel">
-          <div class="icon-frame icon-xls">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
-              <polyline points="14 2 14 8 20 8"></polyline>
-              <path d="M8 13h8"></path>
-              <path d="M8 17h8"></path>
-              <path d="M10 9h4"></path>
-            </svg>
-          </div>
-          <span class="nav-text">CSV to Excel</span>
-        </button>
-
-        <button class="nav-item" data-tool="excel_to_csv">
-          <div class="icon-frame icon-csv">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-              stroke-linecap="round" stroke-linejoin="round">
-              <polyline points="21 8 21 21 3 21 3 8"></polyline>
-              <rect x="1" y="3" width="22" height="5"></rect>
-              <line x1="10" y1="12" x2="14" y2="12"></line>
-            </svg>
-          </div>
-          <span class="nav-text">Excel to CSV</span>
-        </button>
+          <p class="nav-label">Workflow Tools</p>
+          <button class="nav-item active" data-tool="bank_to_excel"
+            title="Convert PDF/CSV bank statements to professional Excel ledgers">
+            <div class="icon-frame icon-emerald">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="16" y1="13" x2="8" y2="13"></line>
+                <line x1="16" y1="17" x2="8" y2="17"></line>
+                <polyline points="10 9 9 9 8 9"></polyline>
+              </svg>
+            </div>
+            <span class="nav-text">Bank to Excel</span>
+          </button>
+          <button class="nav-item" data-tool="pdf_to_csv"
+            title="Extract data from PDF documents into standard CSV format">
+            <div class="icon-frame icon-gray">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="12" y1="18" x2="12" y2="12"></line>
+                <line x1="9" y1="15" x2="15" y2="15"></line>
+              </svg>
+            </div>
+            <span class="nav-text">PDF to CSV</span>
+          </button>
+          <button class="nav-item" data-tool="excel_to_csv"
+            title="Standardize Excel workbooks into clean, flat CSV files">
+            <div class="icon-frame icon-gray">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 8V21H3V8"></path>
+                <path d="M1 3H23V8H1V3Z"></path>
+                <path d="M10 12H14"></path>
+                <polyline points="21 8 21 21 3 21 3 8"></polyline>
+                <rect x="1" y="3" width="22" height="5"></rect>
+                <line x1="10" y1="12" x2="14" y2="12"></line>
+              </svg>
+            </div>
+            <span class="nav-text">Excel to CSV</span>
+          </button>
       </div>
 
       <div class="nav-group">
         <p class="nav-label">Account</p>
-        <button class="nav-item" data-tool="history">
+        <button class="nav-item" data-tool="history" title="View your previous conversion audit logs and files">
           <div class="icon-frame icon-gray">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
@@ -168,7 +163,7 @@
           </div>
           <span class="nav-text">History</span>
         </button>
-        <button class="nav-item" data-tool="subscription">
+        <button class="nav-item" data-tool="subscription" title="Manage your subscription tier and usage quotas">
           <div class="icon-frame icon-gray">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
@@ -184,7 +179,8 @@
       <!-- Social Links -->
       <div class="nav-group" style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border);">
         <p class="nav-label">Connect</p>
-        <a href="https://x.com/quick_converter" target="_blank" class="nav-item" style="text-decoration: none;">
+        <a href="https://x.com/quick_converter" target="_blank" class="nav-item" style="text-decoration: none;"
+          title="Follow QuickConverter on X / Twitter for updates">
           <div class="icon-frame icon-gray">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
               <path
@@ -215,8 +211,9 @@
           </div>
         </div>
 
-        <div class="user-badge"
-          style="width:100%; justify-content: space-between; padding: 0.5rem 0; display:flex; align-items:center;">
+        <div class="user-badge" id="user-badge-footer"
+          style="width:100%; justify-content: space-between; padding: 0.5rem 0; display:flex; align-items:center;"
+          title="User Profile and Subscription Tier">
           <div style="display:flex; align-items: center; gap: 0.75rem;">
             <div class="profile-avatar-small" id="user-avatar-small"
               style="background:var(--accent); color:white; width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem;">
@@ -226,7 +223,7 @@
                 style="font-weight:600; font-size:0.85rem; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:110px;">Guest</span>
             </div>
           </div>
-          <button id="sign-out-btn-footer" class="btn-icon hidden" title="Sign Out">
+          <button id="sign-out-btn-footer" class="btn-icon hidden" title="Sign out of your account securely">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
               stroke-linecap="round" stroke-linejoin="round">
               <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -245,8 +242,8 @@
       <div class="header-row">
         <h1 id="tool-title">Bank Statement to Excel</h1>
         <div class="auth-group">
-          <a href="#" class="btn-signin">Sign In</a>
-          <a href="#" class="btn-signup">Get Started</a>
+          <a href="#" class="btn-signin" title="Access your existing account and conversion history">Sign In</a>
+          <a href="#" class="btn-signup" title="Create a new account to increase your conversion limits">Get Started</a>
         </div>
       </div>
 
@@ -261,11 +258,12 @@
             workflows.
 
             <input type="file" id="file-input" class="hidden">
-            <button id="browse-btn" class="btn-large">Upload Document</button>
+            <button id="browse-btn" class="btn-large" title="Select a PDF, CSV, or Excel file from your computer">Upload
+              Document</button>
 
             <!-- Mobile Only: How It Works Trigger -->
             <button id="mobile-info-btn" class="btn-ghost mobile-info-trigger"
-              style="display:none; margin-top:1rem; width:100%;">
+              style="display:none; margin-top:1rem; width:100%;" title="Learn more about our extraction process">
               How It Works
             </button>
 
@@ -357,7 +355,7 @@
 
         <!-- Secondary Ad Panel -->
         <div class="workspace-ad-panel">
-          <div class="ad-side-card">
+          <div class="ad-side-card" title="Partner Advertisement - View premium financial services and offers">
             <p class="ad-label">Partner Advertisement</p>
             <div class="ad-side-content">
               <p class="ad-placeholder-text">Premium Ad Space</p>
@@ -375,10 +373,12 @@
               <p class="hash-tag">Audit Hash: <span id="res-hash">0x...</span></p>
             </div>
             <div class="result-actions">
-              <a id="download-btn" href="#" class="btn-primary" target="_blank">
+              <a id="download-btn" href="#" class="btn-primary" target="_blank"
+                title="Download your processed spreadsheet (XLSX/CSV)">
                 <span class="icon">📥</span> Download Spreadsheet
               </a>
-              <button id="reset-btn" class="btn-secondary">New Conversion</button>
+              <button id="reset-btn" class="btn-secondary" title="Return to the upload workspace for a new document">New
+                Conversion</button>
             </div>
           </div>
 
