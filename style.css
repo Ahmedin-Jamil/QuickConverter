@@ -43,12 +43,16 @@
 
 .logo-img {
     height: 47px;
+    max-height: 47px;
     width: auto;
+    max-width: 100%;
+    object-fit: contain;
     vertical-align: middle;
     margin-right: 2px;
     /* Reduced space from 'onvert' text */
 }
 
+/* ... other styles reset ... */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -90,9 +94,6 @@ aside {
     top: 0;
     height: 100vh;
 }
-
-
-/* ... existing styles ... */
 
 .features-grid {
     display: grid;
@@ -329,8 +330,13 @@ aside {
 }
 
 #ad-sidebar-bottom {
-    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     max-height: 500px;
+    min-height: 120px;
     opacity: 1;
     overflow: hidden;
     transform: translateX(0);
@@ -338,11 +344,12 @@ aside {
 
 .sidebar-collapsed #ad-sidebar-bottom {
     max-height: 0;
+    min-height: 0 !important;
     opacity: 0;
     padding: 0 !important;
     margin: 0 !important;
-    min-height: 0 !important;
-    transform: translateX(-20px);
+    transform: translateX(-100%);
+    pointer-events: none;
 }
 
 #quota-bar {
@@ -683,6 +690,8 @@ h1 {
     align-items: center;
     box-shadow: var(--shadow-lg);
     animation: fadeInSlideUp 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow: hidden;
+    contain: layout;
 }
 
 .loader-container {
