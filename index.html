@@ -102,84 +102,138 @@
         </button>
       </div>
 
-      <!-- Profile Section -->
-      <div id="profile-section" class="nav-group hidden">
-        <p class="nav-label">Your profile</p>
-        <div class="profile-card">
-          <div class="profile-avatar" id="user-avatar">?</div>
-          <div class="profile-info">
-            <span id="user-name">User Name</span>
-            <span id="user-tier-label" class="tier-tag">GUEST</span>
-          </div>
-        </div>
-        <button id="sign-out-btn" class="btn-ghost"
-          style="width:100%; margin-top:0.5rem; padding: 0.4rem; font-size:0.8rem;">
-          Sign Out
-        </button>
-      </div>
+      <div class="nav-group" style="margin-top: 1.5rem; flex-grow: 1;">
+        <p class="nav-label">Workflows</p>
 
-      <div class="nav-group">
-        <p class="nav-label">Financial Workflows</p>
         <button class="nav-item active" data-tool="bank_to_excel">
-          <span>🏦</span> <span class="nav-text">Bank to Excel</span>
+          <div class="icon-frame icon-bank">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 21h18M5 21v-7h8v7m-4-7v7M2 10l10-7 10 7M2 10v4h20v-4" />
+            </svg>
+          </div>
+          <span class="nav-text">Bank Statement</span>
         </button>
+
         <button class="nav-item" data-tool="pdf_to_csv">
-          <span>📊</span> <span class="nav-text">PDF to CSV</span>
+          <div class="icon-frame icon-pdf">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <path d="M9 15h6"></path>
+              <path d="M9 19h6"></path>
+              <path d="M9 11h6"></path>
+            </svg>
+          </div>
+          <span class="nav-text">PDF to CSV</span>
         </button>
+
         <button class="nav-item" data-tool="csv_to_excel">
-          <span>📈</span> <span class="nav-text">CSV to Excel</span>
+          <div class="icon-frame icon-xls">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+              <polyline points="14 2 14 8 20 8"></polyline>
+              <path d="M8 13h8"></path>
+              <path d="M8 17h8"></path>
+              <path d="M10 9h4"></path>
+            </svg>
+          </div>
+          <span class="nav-text">CSV to Excel</span>
         </button>
+
         <button class="nav-item" data-tool="excel_to_csv">
-          <span>🔄</span> <span class="nav-text">Excel to CSV</span>
+          <div class="icon-frame icon-csv">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="21 8 21 21 3 21 3 8"></polyline>
+              <rect x="1" y="3" width="22" height="5"></rect>
+              <line x1="10" y1="12" x2="14" y2="12"></line>
+            </svg>
+          </div>
+          <span class="nav-text">Excel to CSV</span>
         </button>
       </div>
 
       <div class="nav-group">
         <p class="nav-label">Account</p>
         <button class="nav-item" data-tool="history">
-          <span>📜</span> <span class="nav-text">History</span>
+          <div class="icon-frame icon-gray">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 8v4l3 3"></path>
+              <circle cx="12" cy="12" r="10"></circle>
+            </svg>
+          </div>
+          <span class="nav-text">History</span>
         </button>
         <button class="nav-item" data-tool="subscription">
-          <span>💳</span> <span class="nav-text">Subscription</span>
+          <div class="icon-frame icon-gray">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect>
+              <line x1="1" y1="10" x2="23" y2="10"></line>
+            </svg>
+          </div>
+          <span class="nav-text">Subscription</span>
         </button>
       </div>
 
 
       <!-- Social Links -->
-      <div class="nav-group" style="margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--border);">
+      <div class="nav-group" style="margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border);">
         <p class="nav-label">Connect</p>
         <a href="https://x.com/quick_converter" target="_blank" class="nav-item" style="text-decoration: none;">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="min-width: 16px;">
-            <path
-              d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-          </svg>
+          <div class="icon-frame icon-gray">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
+              <path
+                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
+            </svg>
+          </div>
           <span class="nav-text">Twitter / X</span>
         </a>
       </div>
 
       <!-- AdSense: Sidebar Bottom -->
-      <div id="ad-sidebar-bottom" class="ad-container-sidebar">
-        <!-- PASTE YOUR GOOGLE ADSENSE CODE HERE -->
-        <p class="ad-placeholder-text">Ad Space</p>
+      <div id="ad-sidebar-bottom" class="ad-container-sidebar"
+        style="margin-top: auto; flex-shrink: 0; min-height: auto; padding: 1rem 0;">
+        <p class="ad-placeholder-text" style="font-size:0.7rem; margin:0;">Ad Space</p>
       </div>
 
-      <footer style="margin-top: auto; border:none; padding:0;">
+      <footer style="margin-top: 0; border:none; padding:0; flex-shrink: 0;">
         <!-- Quota Progress Section -->
         <div id="quota-section" class="nav-group"
-          style="padding: 1rem; margin-bottom: 0.5rem; background: rgba(16, 185, 129, 0.03); border-radius: 0.75rem;">
-          <div style="display:flex; justify-content:space-between; font-size:0.75rem; margin-bottom:0.5rem;">
-            <span style="color:var(--text-muted); font-weight:600;">Monthly Usage</span>
-            <span id="quota-label" style="color:var(--accent); font-weight:700;">0/0</span>
+          style="padding: 0.8rem; margin-bottom: 0.5rem; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 0.5rem;">
+          <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:0.4rem;">
+            <span style="color:var(--text-secondary); font-weight:600;">Monthly Limit</span>
+            <span id="quota-label" style="color:var(--text-primary); font-weight:700;">0/0</span>
           </div>
-          <div style="height: 6px; background: var(--border); border-radius: 3px; overflow: hidden;">
+          <div style="height: 4px; background: var(--border-bright); border-radius: 2px; overflow: hidden;">
             <div id="quota-bar"
               style="height: 100%; width: 0%; background: var(--accent); transition: width 0.3s ease;"></div>
           </div>
         </div>
 
-        <div class="user-badge" style="width:100%; justify-content: space-between; padding: 0.75rem;">
-          <span id="display-user-name">Guest User</span>
-          <span class="tier-tag" id="display-tier-badge">3 CONVERSIONS</span>
+        <div class="user-badge"
+          style="width:100%; justify-content: space-between; padding: 0.5rem 0; display:flex; align-items:center;">
+          <div style="display:flex; align-items: center; gap: 0.75rem;">
+            <div class="profile-avatar-small" id="user-avatar-small"
+              style="background:var(--accent); color:white; width:28px; height:28px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.8rem;">
+              U</div>
+            <div style="display:flex; flex-direction:column;">
+              <span id="display-user-name"
+                style="font-weight:600; font-size:0.85rem; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:110px;">Guest</span>
+            </div>
+          </div>
+          <button id="sign-out-btn-footer" class="btn-icon hidden" title="Sign Out">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+              <polyline points="16 17 21 12 16 7"></polyline>
+              <line x1="21" y1="12" x2="9" y2="12"></line>
+            </svg>
+          </button>
         </div>
       </footer>
     </aside>

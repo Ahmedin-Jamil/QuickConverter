@@ -65,7 +65,7 @@ const authForm = document.getElementById('auth-form');
 const authSubmit = document.getElementById('auth-submit');
 const modalTitle = document.getElementById('modal-title');
 const nameGroup = document.getElementById('name-group');
-const profileSection = document.getElementById('profile-section');
+// const profileSection = document.getElementById('profile-section'); // Removed from DOM
 const authGroup = document.querySelector('.auth-group');
 
 // Initialize
@@ -167,11 +167,12 @@ async function init() {
 }
 
 async function handleAuthStateChange(session) {
+  const signOutBtn = document.getElementById('sign-out-btn-footer');
+
   if (session) {
     currentUser = session.user;
     authGroup.classList.add('hidden');
-    profileSection.classList.remove('hidden');
-
+    if (signOutBtn) signOutBtn.classList.remove('hidden');
 
     // Fetch Profile for Tier
     if (supabase) {
@@ -183,18 +184,17 @@ async function handleAuthStateChange(session) {
 
       if (profile) {
         userTier = profile.tier || 'guest';
-        document.getElementById('user-name').textContent = profile.full_name || currentUser.email.split('@')[0];
-        const displayTier = userTier === 'pro' ? 'Unlimited' : `${QUOTA_LIMITS[userTier]} Conversions`;
-        const tierLabel = document.getElementById('user-tier-label');
-        tierLabel.textContent = displayTier.toUpperCase();
-        tierLabel.className = `tier-tag ${userTier === 'pro' ? 'pro-tier' : ''}`;
-        document.getElementById('user-avatar').textContent = (profile.full_name || 'U')[0].toUpperCase();
+        document.getElementById('user-avatar-small').textContent = (profile.full_name || 'U')[0].toUpperCase();
 
         // Update badge display
-        document.getElementById('display-user-name').textContent = profile.full_name || currentUser.email.split('@')[0];
+        const nameEl = document.getElementById('display-user-name');
+        if (nameEl) nameEl.textContent = profile.full_name || currentUser.email.split('@')[0];
+
         const tierBadge = document.getElementById('display-tier-badge');
-        tierBadge.textContent = displayTier.toUpperCase();
-        tierBadge.className = `tier-tag ${userTier === 'pro' ? 'pro-tier' : ''}`;
+        if (tierBadge) {
+          tierBadge.textContent = displayTier.toUpperCase();
+          tierBadge.className = `tier-tag ${userTier === 'pro' ? 'pro-tier' : ''}`;
+        }
 
         fetchUsage();
         updateSizeLimitUI();
@@ -204,13 +204,17 @@ async function handleAuthStateChange(session) {
     currentUser = null;
     userTier = 'guest';
     authGroup.classList.remove('hidden');
-    profileSection.classList.add('hidden');
+    if (signOutBtn) signOutBtn.classList.add('hidden');
 
     // Reset badge
-    document.getElementById('display-user-name').textContent = 'Guest User';
+    const nameEl = document.getElementById('display-user-name');
+    if (nameEl) nameEl.textContent = 'Guest User';
+
     const tierBadge = document.getElementById('display-tier-badge');
-    tierBadge.textContent = '3 CONVERSIONS';
-    tierBadge.className = 'tier-tag';
+    if (tierBadge) {
+      tierBadge.textContent = '3 CONVERSIONS';
+      tierBadge.className = 'tier-tag';
+    }
 
     fetchUsage('guest');
     updateSizeLimitUI();
@@ -357,7 +361,8 @@ authForm.onsubmit = async (e) => {
   }
 };
 
-document.getElementById('sign-out-btn').onclick = () => supabase.auth.signOut();
+const signOutBtn = document.getElementById('sign-out-btn-footer');
+if (signOutBtn) signOutBtn.onclick = () => supabase.auth.signOut();
 
 function setupNav() {
   navItems.forEach(item => {
