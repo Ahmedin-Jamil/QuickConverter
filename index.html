@@ -69,12 +69,38 @@
 </head>
 
 <body>
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+  <div class="mobile-header">
+    <a href="/" class="logo-container">
+      <img src="QC Logo Green Gradient.svg" alt="QC Logo" class="logo-img">
+      <span class="logo-text">onvert</span>
+    </a>
+    <button id="mobile-toggle" class="sidebar-toggle">
+      <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"
+        stroke-linecap="round" stroke-linejoin="round">
+        <line x1="3" y1="12" x2="21" y2="12"></line>
+        <line x1="3" y1="6" x2="21" y2="6"></line>
+        <line x1="3" y1="18" x2="21" y2="18"></line>
+      </svg>
+    </button>
+  </div>
+
   <div class="dashboard-wrapper">
     <!-- Sidebar Navigation -->
-    <aside>
-      <a href="/" class="logo-container">
-        <img src="QC Logo Green Gradient.svg" alt="QC Logo" class="logo-img">onvert
-      </a>
+    <aside id="sidebar">
+      <div class="sidebar-header">
+        <a href="/" class="logo-container sidebar-logo">
+          <img src="QC Logo Green Gradient.svg" alt="QC Logo" class="logo-img">
+          <span class="logo-text">onvert</span>
+        </a>
+        <button id="sidebar-toggle" class="sidebar-toggle">
+          <svg class="toggle-icon" viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" stroke-width="2"
+            fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+        </button>
+      </div>
 
       <!-- Profile Section -->
       <div id="profile-section" class="nav-group hidden">
@@ -95,26 +121,26 @@
       <div class="nav-group">
         <p class="nav-label">Financial Workflows</p>
         <button class="nav-item active" data-tool="bank_to_excel">
-          <span>🏦</span> Bank to Excel
+          <span>🏦</span> <span class="nav-text">Bank to Excel</span>
         </button>
         <button class="nav-item" data-tool="pdf_to_csv">
-          <span>📊</span> PDF to CSV
+          <span>📊</span> <span class="nav-text">PDF to CSV</span>
         </button>
         <button class="nav-item" data-tool="csv_to_excel">
-          <span>📈</span> CSV to Excel
+          <span>📈</span> <span class="nav-text">CSV to Excel</span>
         </button>
         <button class="nav-item" data-tool="excel_to_csv">
-          <span>🔄</span> Excel to CSV
+          <span>🔄</span> <span class="nav-text">Excel to CSV</span>
         </button>
       </div>
 
       <div class="nav-group">
         <p class="nav-label">Account</p>
         <button class="nav-item" data-tool="history">
-          <span>📜</span> History
+          <span>📜</span> <span class="nav-text">History</span>
         </button>
         <button class="nav-item" data-tool="subscription">
-          <span>💳</span> Subscription
+          <span>💳</span> <span class="nav-text">Subscription</span>
         </button>
       </div>
 
@@ -127,7 +153,7 @@
             <path
               d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
           </svg>
-          Twitter / X
+          <span class="nav-text">Twitter / X</span>
         </a>
       </div>
 
@@ -170,15 +196,6 @@
         </div>
       </div>
 
-      <!-- AdSense: Top Banner -->
-      <div id="ad-top-banner" class="ad-container-banner"
-        style="margin-top: 0; margin-bottom: 2rem; border:none; background:transparent;">
-        <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-6510324441085994"
-          data-ad-slot="8680787716" data-ad-format="auto" data-full-width-responsive="true"></ins>
-        <script>
-          (adsbygoogle = window.adsbygoogle || []).push({});
-        </script>
-      </div>
 
       <!-- Upload Workspace -->
       <section id="upload-view" class="workspace-container">
@@ -191,6 +208,13 @@
 
             <input type="file" id="file-input" class="hidden">
             <button id="browse-btn" class="btn-large">Upload Document</button>
+
+            <!-- Mobile Only: How It Works Trigger -->
+            <button id="mobile-info-btn" class="btn-ghost mobile-info-trigger"
+              style="display:none; margin-top:1rem; width:100%;">
+              How It Works
+            </button>
+
             <p id="size-limit-label" style="font-size:0.8rem; color:var(--text-muted); margin-top:1rem;">
               Max file size: 2MB (Guest)
             </p>
@@ -255,223 +279,240 @@
 
       <!-- Processing View -->
       <section id="processing-view" class="workspace hidden">
-        <div class="processing-state" style="max-width: 400px; width: 100%; text-align: center;">
-          <div id="progress-percent"
-            style="font-size: 3rem; font-family: 'Outfit', sans-serif; font-weight: 700; color: var(--accent); margin-bottom: 1rem;">
-            0%</div>
-
-          <div
-            style="height: 8px; width: 100%; background: var(--border); border-radius: 4px; overflow: hidden; margin-bottom: 2rem;">
-            <div id="conversion-progress-bar"
-              style="height: 100%; width: 0%; background: var(--accent); transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);">
-            </div>
+        <div class="processing-state-card">
+          <div class="loader-container">
+            <div class="pulse-ring"></div>
+            <div id="progress-percent" class="percent-display">0%</div>
           </div>
 
-          <h3 id="progress-status" style="margin-bottom: 0.5rem;">Running Deterministic Pipeline...</h3>
-          <p id="progress-sub-status" style="color:var(--text-muted)">Extracting → Normalizing → Assessing Quality</p>
+          <div class="processing-details">
+            <h3 id="progress-status" class="status-main">Initiating Extraction Pipeline...</h3>
+            <div class="progress-bar-outer">
+              <div id="conversion-progress-bar" class="progress-bar-inner"></div>
+            </div>
+            <p id="progress-sub-status" class="status-sub">Detecting High-Density Structures...</p>
+
+            <div id="estimated-time-container" class="estimation-box">
+              <span class="est-label">Estimated Completion</span>
+              <span id="estimated-time-val" class="est-val">Calculating...</span>
+            </div>
+          </div>
         </div>
       </section>
 
       <!-- Result View -->
-      <section id="result-view" class="result-card hidden">
-        <div style="display:flex; justify-content:space-between; align-items:start;">
-          <div>
-            <h2 style="color:var(--success)">Processing Complete!</h2>
-            <p style="color:var(--text-muted); font-size:0.9rem;">Document Hash: <span id="res-hash"
-                style="font-family:monospace">0x...</span></p>
-          </div>
-        </div>
-
-        <div class="stats-grid">
-          <div class="stat-item">
-            <span class="stat-lab">Total Rows</span>
-            <span class="stat-val" id="res-rows">0</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-lab">Latency</span>
-            <span class="stat-val" id="res-time">0ms</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-lab">Data Quality</span>
-            <span class="stat-val" id="res-dq">Clean</span>
-          </div>
-        </div>
-
-        <!-- AdSense: Result Banner (Appears after conversion) -->
-        <div id="ad-result-banner" class="ad-container-banner">
-          <!-- PASTE YOUR GOOGLE ADSENSE CODE HERE -->
-          <p class="ad-placeholder-text">Ad Space Available</p>
-        </div>
-
-        <!-- Reconciliation Status Card -->
-        <div id="reconciliation-card" class="stats-grid"
-          style="margin-top: 0; padding: 1rem; background: var(--bg-tertiary); border-left: 4px solid var(--accent);">
-          <div class="stat-item" style="align-items: flex-start;">
-            <span class="stat-lab">Reconciliation Check</span>
-            <span class="stat-val" id="recon-status" style="font-size: 1rem;">Checking...</span>
-          </div>
-          <div class="stat-item" style="align-items: flex-start;">
-            <span class="stat-lab">Expected Closing</span>
-            <span class="stat-val" id="recon-expected" style="font-size: 1rem;">$0.00</span>
-          </div>
-          <div class="stat-item" style="align-items: flex-start;">
-            <span class="stat-lab">Actual Closing</span>
-            <span class="stat-val" id="recon-actual" style="font-size: 1rem;">$0.00</span>
-          </div>
-        </div>
-
-        <div id="dq-breakdown" class="stats-grid" style="margin-top: 0.5rem; grid-template-columns: repeat(4, 1fr);">
-          <div class="stat-item">
-            <span class="stat-lab">Clean (Table)</span>
-            <span class="stat-val" id="dq-clean" style="color:var(--success)">0</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-lab">Recovered (Regex)</span>
-            <span class="stat-val" id="dq-recovered" style="color:var(--warning)">0</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-lab">Suspect (Anomalies)</span>
-            <span class="stat-val" id="dq-suspect">0</span>
-          </div>
-          <div class="stat-item">
-            <span class="stat-lab">Metadata Rows</span>
-            <span class="stat-val" id="dq-non-transaction" style="color:var(--text-muted)">0</span>
-          </div>
-        </div>
-
-        <div class="action-row">
-          <a id="download-btn" href="#" class="btn-download" target="_blank">Download Results</a>
-          <button id="reset-btn" class="btn-ghost">Process Another</button>
-        </div>
-
-        <div class="mt-4" style="text-align:left;">
-          <p class="nav-label">Transaction Preview (with Categories)</p>
-          <div
-            style="overflow-x:auto; background:var(--bg-tertiary); border-radius:0.5rem; padding:1rem; min-height:100px;">
-            <table class="table-preview" id="preview-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Description</th>
-                  <th>Category</th>
-                  <th style="text-align:right">Debit</th>
-                  <th style="text-align:right">Credit</th>
-                  <th style="text-align:right">Balance</th>
-                  <th>Flag</th>
-                </tr>
-              </thead>
-              <tbody>
-                <!-- Preview rows here -->
-              </tbody>
-            </table>
-          </div>
-          <!-- Financial Summary Preview -->
-          <div id="summary-preview" class="stats-grid mt-4 hidden">
-            <div class="stat-item">
-              <span class="stat-lab">Total Credits</span>
-              <span class="stat-val" id="sum-credits" style="color:var(--success)">$0.00</span>
+      <section id="result-view" class="workspace hidden">
+        <div class="result-dashboard">
+          <div class="result-header">
+            <div>
+              <h2 class="emerald-gradient-text">Analysis Complete</h2>
+              <p class="hash-tag">Audit Hash: <span id="res-hash">0x...</span></p>
             </div>
-            <div class="stat-item">
-              <span class="stat-lab">Total Debits</span>
-              <span class="stat-val" id="sum-debits" style="color:var(--accent)">$0.00</span>
-            </div>
-            <div class="stat-item">
-              <span class="stat-lab">Closing Balance</span>
-              <span class="stat-val" id="sum-closing" style="font-weight:800">$0.00</span>
+            <div class="result-actions">
+              <a id="download-btn" href="#" class="btn-primary" target="_blank">
+                <span class="icon">📥</span> Download Spreadsheet
+              </a>
+              <button id="reset-btn" class="btn-secondary">New Conversion</button>
             </div>
           </div>
+
+          <div class="audit-grid">
+            <!-- Core Stats -->
+            <div class="audit-card main-stats">
+              <div class="stat-group">
+                <span class="stat-label">Transactions Extracted</span>
+                <span id="res-rows" class="stat-value">0</span>
+              </div>
+              <div class="stat-group">
+                <span class="stat-label">Processing Latency</span>
+                <span id="res-time" class="stat-value">0ms</span>
+              </div>
+              <div class="stat-group">
+                <span class="stat-label">Extraction Quality</span>
+                <span id="res-dq" class="stat-value emerald">High Fidelity</span>
+              </div>
+            </div>
+
+            <!-- Reconciliation Logic -->
+            <div id="reconciliation-card" class="audit-card recon-card">
+              <div class="audit-card-title">Balance Reconciliation</div>
+              <div class="recon-row">
+                <span class="recon-label">Expected Closing</span>
+                <span id="recon-expected" class="recon-value">$0.00</span>
+              </div>
+              <div class="recon-row">
+                <span class="recon-label">Actual Closing</span>
+                <span id="recon-actual" class="recon-value">$0.00</span>
+              </div>
+              <div class="recon-status-bar">
+                <div id="recon-status" class="recon-status-text">Integrity Verified</div>
+              </div>
+            </div>
+
+            <!-- Data Quality Breakdown -->
+            <div id="dq-breakdown" class="audit-card dq-card">
+              <div class="audit-card-title">Data Validation Audit</div>
+              <div class="dq-grid">
+                <div class="dq-item">
+                  <span class="dq-label">Clean</span>
+                  <span id="dq-clean" class="dq-val success">0</span>
+                </div>
+                <div class="dq-item">
+                  <span class="dq-label">Recovered</span>
+                  <span id="dq-recovered" class="dq-val warning">0</span>
+                </div>
+                <div class="dq-item">
+                  <span class="dq-label">Suspect</span>
+                  <span id="dq-suspect" class="dq-val error">0</span>
+                </div>
+                <div class="dq-item">
+                  <span class="dq-label">Meta</span>
+                  <span id="dq-non-transaction" class="dq-val muted">0</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Preview Table -->
+          <div class="preview-section">
+            <h4 class="preview-title">Raw Distribution Preview</h4>
+            <div class="table-container">
+              <table id="preview-table" class="table-preview">
+                <!-- Data injected here -->
+              </table>
+            </div>
+          </div>
+
+          <!-- Transaction Preview (with Categories) -->
+          <div class="mt-4" style="text-align:left;">
+            <p class="nav-label">Transaction Preview (with Categories)</p>
+            <div
+              style="overflow-x:auto; background:var(--bg-tertiary); border-radius:0.5rem; padding:1rem; min-height:100px;">
+              <table class="table-preview" id="preview-table-detailed">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Description</th>
+                    <th>Category</th>
+                    <th style="text-align:right">Debit</th>
+                    <th style="text-align:right">Credit</th>
+                    <th style="text-align:right">Balance</th>
+                    <th>Flag</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <!-- Preview rows here -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Financial Summary Preview -->
+            <div id="summary-preview" class="stats-grid mt-4 hidden">
+              <div class="stat-item">
+                <span class="stat-lab">Total Credits</span>
+                <span class="stat-val" id="sum-credits" style="color:var(--success)">$0.00</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-lab">Total Debits</span>
+                <span class="stat-val" id="sum-debits" style="color:var(--accent)">$0.00</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-lab">Closing Balance</span>
+                <span class="stat-val" id="sum-closing" style="font-weight:800">$0.00</span>
+              </div>
+            </div>
+          </div>
+          <!-- Transaction Preview (with Categories) -->
         </div>
       </section>
       <!-- History View -->
-      <section id="history-view" class="workspace hidden"
-        style="text-align:left; border:none; background:none; padding:0; max-width:100%">
-        <h2 style="margin-bottom:1.5rem">Conversion History</h2>
+      <section id="history-view" class="workspace hidden">
+        <div class="history-panel">
+          <div class="panel-header">
+            <h2 class="section-title">Audit History</h2>
+            <p class="panel-subtitle">Review and retrieve your past financial extractions</p>
+          </div>
 
-        <!-- Empty State -->
-        <div id="history-empty" class="empty-state custom-hidden">
-          <div class="empty-icon">🕒</div>
-          <h3>No conversions yet</h3>
-          <p>Your processed documents will appear here.</p>
-          <button class="btn-primary" onclick="document.querySelector('[data-tool=\'bank_to_excel\']').click()">Start
-            Converting</button>
-        </div>
+          <!-- Empty State -->
+          <div id="history-empty" class="empty-state custom-hidden">
+            <div class="empty-icon-glow">🕒</div>
+            <h3>No Audit History</h3>
+            <p>Your processed documents will appear here once you complete an extraction tool from the sidebar.</p>
+          </div>
 
-        <!-- Populated State -->
-        <div id="history-container" class="history-card custom-hidden">
-          <div style="overflow-x:auto;">
-            <table class="table-preview" id="history-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Rows</th>
-                  <th>Latency</th>
-                  <th>DQ Score</th>
-                  <th>Hash</th>
-                </tr>
-              </thead>
-              <tbody id="history-body">
-                <!-- History items here -->
-              </tbody>
-            </table>
+          <!-- Populated State -->
+          <div id="history-container" class="history-list-card custom-hidden">
+            <div class="table-scroll-shield">
+              <table class="table-premium" id="history-table">
+                <thead>
+                  <tr>
+                    <th>Extraction Date</th>
+                    <th>Records</th>
+                    <th>Process Time</th>
+                    <th>Quality Score</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="history-body">
+                  <!-- History items here -->
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </section>
 
       <!-- Subscription View -->
-      <section id="subscription-view" class="workspace hidden"
-        style="text-align:left; border:none; background:none; padding:0;">
-        <h2 style="margin-bottom:1.5rem">Subscription Management</h2>
+      <section id="subscription-view" class="workspace hidden">
+        <div class="account-dashboard">
+          <div class="panel-header">
+            <h2 class="section-title">Subscription & Usage</h2>
+            <p class="panel-subtitle">Manage your operational tier and view usage quotas</p>
+          </div>
 
-        <div
-          style="display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap:2rem; align-items: start;">
-          <!-- Plan Details Card -->
-          <div class="instruction-card" style="margin:0; width:100%">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1.5rem;">
-              <h4 style="margin:0">Current Plan</h4>
-              <span id="sub-badge" class="tier-tag">GUEST</span>
-            </div>
+          <div class="account-grid">
+            <!-- Current Plan Card -->
+            <div class="account-card plan-summary">
+              <div class="card-header-row">
+                <span class="card-tag">Current Operational Tier</span>
+                <span id="sub-badge" class="tier-tag">GUEST</span>
+              </div>
 
-            <div style="margin-bottom:2rem;">
-              <p id="sub-plan-name"
-                style="font-size:1.8rem; font-weight:800; color:var(--text-main); margin-bottom:0.25rem;">Free Tier</p>
-              <p id="sub-plan-desc" style="color:var(--text-muted); font-size:0.95rem;">Basic access for individuals</p>
-              <div id="sub-price-tag"
-                style="margin-top:1rem; font-size:1.25rem; font-weight:700; color:var(--accent); display:none;">
-                $9.00<span style="font-size:0.8rem; font-weight:400; color:var(--text-muted)"> / month</span>
+              <div class="plan-details">
+                <h3 id="sub-plan-name" class="plan-title">Free Tier</h3>
+                <p id="sub-plan-desc" class="plan-meta">Basic extraction access for standard digital statements</p>
+                <div id="sub-price-tag" class="plan-price hidden">
+                  $9.00<span class="period"> / month</span>
+                </div>
+              </div>
+
+              <div class="card-footer-actions">
+                <button id="manage-sub-btn" class="btn-primary full-width">Upgrade to Pro Subscription</button>
+                <p id="sub-portal-link" class="portal-cta hidden">
+                  Already on Pro? <a href="#" target="_blank">Manage Billing Portal</a>
+                </p>
               </div>
             </div>
 
-            <button id="manage-sub-btn" class="btn-large" style="width:100%">Upgrade to Pro — $9.00</button>
-            <p id="sub-portal-link" class="hidden" style="margin-top:1rem; text-align:center;">
-              <a href="#" target="_blank"
-                style="color:var(--text-muted); font-size:0.8rem; text-decoration:none;">Manage
-                in Billing Portal →</a>
-            </p>
-          </div>
-
-          <!-- Benefits Card (Only shown for non-pro) -->
-          <div id="pro-benefits-card" class="instruction-card"
-            style="margin:0; background: rgba(16, 185, 129, 0.03); border-color: var(--accent);">
-            <h4 style="color:var(--accent)">QC Pro Benefits</h4>
-            <ul style="list-style:none; padding:0; margin:1.5rem 0; display:grid; gap:0.75rem;">
-              <li style="display:flex; gap:0.5rem; font-size:0.9rem; color:var(--text-main)">✅
-                <strong>Unlimited</strong> Conversions
-              </li>
-              <li style="display:flex; gap:0.5rem; font-size:0.9rem; color:var(--text-main)">✅ <strong>50MB
-                  Line</strong> File Support</li>
-              <li style="display:flex; gap:0.5rem; font-size:0.9rem; color:var(--text-main)">✅ <strong>Priority</strong>
-                Data Processing</li>
-              <li style="display:flex; gap:0.5rem; font-size:0.9rem; color:var(--text-main)">✅ <strong>Advanced</strong>
-                Data Cleaning</li>
-              <li style="display:flex; gap:0.5rem; font-size:0.9rem; color:var(--text-main)">✅ <strong>Full</strong>
-                Reconciliation Reports</li>
-            </ul>
-            <p style="font-size:0.75rem; color:var(--text-muted); line-height:1.4;">
-              Unlock the full power of QuickConvert for your business or accounting firm.
-            </p>
+            <!-- Tier Benefits / Limits Card -->
+            <div class="account-card benefits-card">
+              <div class="card-header-row">
+                <span class="card-tag">Tier Capabilities</span>
+              </div>
+              <ul class="benefits-list">
+                <li><span class="check">✓</span> <span id="limit-info">Up to 2MB File Support</span></li>
+                <li><span class="check">✓</span> Deterministic ETL Normalization</li>
+                <li><span class="check">✓</span> Excel (.xlsx) & CSV Exports</li>
+                <li><span class="check">✓</span> 3 Global Conversions / Month</li>
+              </ul>
+              <div class="pro-upsell-banner">
+                <p>Pro unlocks 50MB files and Unlimited usage.</p>
+              </div>
+            </div>
           </div>
         </div>
       </section>
+
 
 
 
@@ -526,6 +567,16 @@
         </div>
       </section>
 
+      <!-- AdSense: Page Footer Banner -->
+      <div id="ad-footer-banner" class="ad-container-banner"
+        style="margin: 3rem 0; border:none; background:transparent;">
+        <ins class="adsbygoogle" style="display:block" data-ad-client="ca-pub-6510324441085994"
+          data-ad-slot="8680787716" data-ad-format="auto" data-full-width-responsive="true"></ins>
+        <script>
+          (adsbygoogle = window.adsbygoogle || []).push({});
+        </script>
+      </div>
+
       <!-- Legal Footer -->
       <footer class="legal-footer">
         <a href="javascript:void(0)" class="legal-link" id="link-privacy">Privacy Policy</a>
@@ -539,9 +590,8 @@
   <!-- Legal Modal -->
   <div id="legal-modal" class="modal-overlay hidden">
     <div class="modal-content legal-modal-content">
-      <div class="modal-header"
-        style="padding: 1.5rem 2.5rem; border-bottom: 1px solid var(--border); margin-bottom: 0;">
-        <h2 id="legal-modal-title">Policy</h2>
+      <div class="modal-header">
+        <h2 id="legal-modal-title">Operational Policy</h2>
         <button id="close-legal-modal" class="btn-close">&times;</button>
       </div>
       <div id="legal-modal-body">
@@ -550,51 +600,98 @@
     </div>
   </div>
 
+  <!-- Authentication Modal -->
   <div id="auth-modal" class="modal-overlay hidden">
     <div class="modal-content">
       <div class="modal-header">
-        <h2 id="modal-title">Sign In</h2>
+        <h2 id="modal-title">Operational Access</h2>
         <button id="close-modal" class="btn-close">&times;</button>
       </div>
       <form id="auth-form">
         <div class="form-group" id="name-group">
           <label>Full Name</label>
-          <input type="text" id="auth-name" placeholder="John Doe">
+          <input type="text" id="auth-name" placeholder="E.g. John Doe">
         </div>
         <div class="form-group">
-          <label>Email Address</label>
-          <input type="email" id="auth-email" placeholder="john@example.com" required>
+          <label>Operational Email</label>
+          <input type="email" id="auth-email" placeholder="name@company.com" required>
         </div>
         <div class="form-group">
-          <label>Password</label>
+          <label>Security Key</label>
           <input type="password" id="auth-password" placeholder="••••••••" required>
         </div>
-        <button type="submit" id="auth-submit" class="btn-large" style="width:100%">Sign In</button>
+        <button type="submit" id="auth-submit" class="btn-primary full-width">Initialize Access</button>
       </form>
       <p class="modal-footer">
-        <span id="modal-switch-text">Don't have an account?</span>
-        <a href="#" id="modal-switch-btn" style="color:var(--accent); font-weight:600">Sign Up</a>
+        <span id="modal-switch-text">New Operator?</span>
+        <a href="#" id="modal-switch-btn" style="color:var(--accent); font-weight:700; text-decoration:none;">Create
+          Credentials</a>
       </p>
     </div>
   </div>
 
   <!-- Usage Limit Professional Popup -->
   <div id="limit-modal" class="modal-overlay hidden">
-    <div class="modal-content limit-modal-content" style="max-width: 480px; text-align: center;">
-      <img src="QC Logo Green Gradient.svg" alt="QC Logo" style="height: 80px; margin-bottom: 1.5rem;">
-      <h2 style="font-size: 1.75rem; font-weight: 800; margin-bottom: 1rem; color: var(--text-main);">Limit Reached!
-      </h2>
-      <p id="limit-modal-text" style="color: var(--text-muted); line-height: 1.6; margin-bottom: 2rem;">
-        You've reached your conversion limit. Create a free account to unlock 10 more conversions, or go Pro for
-        unlimited access.
+    <div class="modal-content limit-modal-content">
+      <img src="QC Logo Green Gradient.svg" alt="QC Logo" class="limit-logo">
+      <h2 class="section-title">Quota Reached</h2>
+      <p id="limit-modal-text" class="limit-msg">
+        System throughput is currently restricted for your tier. Upgrade to
+        <strong>Pro Management</strong> to unlock 50MB file sizes and
+        unlimited ETL orchestration.
       </p>
-      <div style="display: flex; flex-direction: column; gap: 0.75rem;" id="limit-actions-guest">
-        <button id="limit-signup-btn" class="btn-primary"
-          style="width: 100%; padding: 1rem; background-color: var(--text-main);">Create Free Account</button>
-        <button id="limit-upgrade-btn" class="btn-primary" style="width: 100%; padding: 1rem;">Go Pro
-          (Unlimited)</button>
-        <button id="close-limit-modal" class="btn-ghost" style="width: 100%; padding: 1rem; border: none;">Maybe
-          Later</button>
+      <div class="limit-actions" id="limit-actions-guest">
+        <button id="limit-signup-btn" class="btn-primary">Provision Free Account</button>
+        <button id="limit-upgrade-btn" class="btn-secondary">Initialize Pro Tier</button>
+        <button id="close-limit-modal" class="btn-ghost" style="border:none">Dismiss</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- How It Works Modal (Mobile) -->
+  <div id="info-modal" class="modal-overlay hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="info-modal-title">How It Works</h2>
+        <button id="close-info-modal" class="btn-close">&times;</button>
+      </div>
+      <div id="info-modal-body">
+        <!-- View 1: Instructions -->
+        <div id="mobile-instructions-view">
+          <ul class="info-list" style="margin-bottom:1.5rem;">
+            <li><strong>Select Tool</strong>: Choose workflow from sidebar.</li>
+            <li><strong>Upload</strong>: Add your PDF, CSV, or XLS/X.</li>
+            <li><strong>Process</strong>: Auto-clean & extract data.</li>
+            <li><strong>Download</strong>: Get audit-ready Excel.</li>
+          </ul>
+          <p style="font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;">
+            <strong>Note:</strong> We require <strong>Searchable Text</strong> documents. Scanned images are not
+            supported.
+          </p>
+          <p
+            style="font-size: 0.75rem; color: var(--text-muted); margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border);">
+            See <a href="javascript:void(0)" id="mobile-privacy-trigger"
+              style="color:var(--accent); font-weight:700;">Privacy Policy</a> for security details.
+          </p>
+        </div>
+
+        <!-- View 2: Privacy Policy (Hidden by default) -->
+        <div id="mobile-privacy-view" class="hidden">
+          <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem;">
+            🔒 <strong>Secure-by-Design</strong>: Your files are processed <strong>in-memory</strong> directly in your
+            browser. They are never uploaded to our servers.
+          </p>
+          <ul style="font-size: 0.85rem; color: var(--text-muted); padding-left: 1rem; margin-bottom: 1rem;">
+            <li><strong>Data Minimization</strong>: We do not store financial data.</li>
+            <li><strong>Local Processing</strong>: All extraction happens on your device.</li>
+            <li><strong>Privacy First</strong>: No persistent personal data is kept after the session ends.</li>
+          </ul>
+          <p
+            style="font-size: 0.75rem; color: var(--text-muted); margin-top:1rem; padding-top:1rem; border-top:1px solid var(--border); text-align: center;">
+            <a href="javascript:void(0)" id="mobile-privacy-back"
+              style="color:var(--accent); font-weight:700; text-decoration:none;">← Back to Instructions</a>
+          </p>
+        </div>
       </div>
     </div>
   </div>

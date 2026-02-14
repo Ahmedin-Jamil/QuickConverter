@@ -58,6 +58,9 @@ const toolTitle = document.getElementById('tool-title');
 
 // New DOM Elements for Auth
 const authModal = document.getElementById('auth-modal');
+const infoModal = document.getElementById('info-modal');
+const mobileInfoBtn = document.getElementById('mobile-info-btn');
+const closeInfoBtn = document.getElementById('close-info-modal');
 const authForm = document.getElementById('auth-form');
 const authSubmit = document.getElementById('auth-submit');
 const modalTitle = document.getElementById('modal-title');
@@ -84,6 +87,46 @@ async function init() {
   setupLegalLinks();
   setupFlipCard();
   updateQuotaDisplay();
+
+  // Sidebar Toggle Logic
+  const sidebar = document.getElementById('sidebar');
+  const sidebarToggle = document.getElementById('sidebar-toggle');
+  const mobileToggle = document.getElementById('mobile-toggle');
+  const sidebarOverlay = document.getElementById('sidebar-overlay');
+  const wrapper = document.querySelector('.dashboard-wrapper');
+
+  const closeSidebar = () => {
+    if (sidebar) sidebar.classList.remove('mobile-active');
+    if (sidebarOverlay) sidebarOverlay.classList.remove('active');
+  };
+
+  if (sidebarToggle && sidebar && wrapper) {
+    sidebarToggle.onclick = () => {
+      if (window.innerWidth <= 768) {
+        closeSidebar();
+      } else {
+        wrapper.classList.toggle('sidebar-collapsed');
+      }
+    };
+  }
+
+  if (mobileToggle && sidebar && sidebarOverlay) {
+    mobileToggle.onclick = () => {
+      sidebar.classList.add('mobile-active');
+      sidebarOverlay.classList.add('active');
+    };
+    sidebarOverlay.onclick = closeSidebar;
+
+    // Auto-close sidebar on link click (for mobile)
+    const navItems = document.querySelectorAll('.nav-item');
+    navItems.forEach(item => {
+      item.addEventListener('click', () => {
+        if (window.innerWidth <= 768) {
+          closeSidebar();
+        }
+      });
+    });
+  }
 
   // Limit Modal Handlers
   const limitModal = document.getElementById('limit-modal');
@@ -548,9 +591,14 @@ async function processFile(file) {
     }
   }
 
+  const estTimeVal = document.getElementById('estimated-time-val');
+  if (estTimeVal) {
+    estTimeVal.innerText = estimateConversionTime(file.size);
+  }
+
   showView('processing');
   startTimer();
-  updateProgressUI(0, "Connecting to Auditor...", "Establishing Secure Stream");
+  updateProgressUI(0, "Initiating Extraction Pipeline...", "Establishing Secure Audit Stream");
 
   const formData = new FormData();
   formData.append('file', file);
@@ -582,7 +630,11 @@ async function processFile(file) {
 
     while (true) {
       const { value, done } = await reader.read();
-      if (done) break;
+      if (done) {
+        // Final update
+        updateProgressUI(100, "Processing Complete", "Finalizing spreadsheet...");
+        break;
+      }
 
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split("\n");
@@ -595,7 +647,7 @@ async function processFile(file) {
 
           if (chunk.status === 'success') {
             stopTimer();
-            updateProgressUI(100, "Done", "Rendering data...");
+            updateProgressUI(100, "Success", "Rendering ledger...");
             renderResults(chunk);
             updateQuotaFromResponse(chunk.usage);
             return;
@@ -609,7 +661,22 @@ async function processFile(file) {
             }
             return;
           } else if (typeof chunk.p !== 'undefined') {
-            updateProgressUI(chunk.p, chunk.status, chunk.sub || "");
+            // Mapping backend statuses to more "value-driven" Elite copy
+            let status = chunk.status;
+            let sub = chunk.sub || "";
+
+            if (chunk.p < 30) {
+              status = "Parsing Data Structures...";
+              sub = "Executing OCR & Layout Assessment";
+            } else if (chunk.p < 60) {
+              status = "Normalizing Transactions...";
+              sub = "Applying Deterministic Cleaning Rules";
+            } else if (chunk.p < 90) {
+              status = "Reconciling Balances...";
+              sub = "Validating Mathematical Integrity";
+            }
+
+            updateProgressUI(chunk.p, status, sub);
           }
         } catch (e) {
           console.warn("Error parsing chunk", e, line);
@@ -627,30 +694,39 @@ async function processFile(file) {
 function renderResults(data) {
   showView('result');
 
-  document.getElementById('res-rows').textContent = data.total_rows;
-  document.getElementById('res-time').textContent = `${data.processing_time_ms.toFixed(0)}ms`;
-  document.getElementById('res-hash').textContent = `${data.document_hash.substring(0, 10)}...`;
+  const resRows = document.getElementById('res-rows');
+  const resTime = document.getElementById('res-time');
+  const resHash = document.getElementById('res-hash');
+
+  if (resRows) resRows.textContent = data.total_rows;
+  if (resTime) resTime.textContent = `${data.processing_time_ms.toFixed(0)}ms`;
+  if (resHash) resHash.textContent = `${data.document_hash.substring(0, 10)}...`;
 
   const dqSpan = document.getElementById('res-dq');
   const dqStats = data.dq_summary || {};
   const cleanCount = dqStats.CLEAN || dqStats.clean || 0;
   const total = data.total_rows || 0;
 
-  if (total > 0 && cleanCount / total > 0.8) {
-    dqSpan.textContent = "High Accuracy";
-    dqSpan.style.color = "var(--success)";
-  } else {
-    dqSpan.textContent = "Recovered";
-    dqSpan.style.color = "var(--warning)";
+  if (dqSpan) {
+    if (total > 0 && cleanCount / total > 0.8) {
+      dqSpan.textContent = "High Fidelity";
+      dqSpan.className = "stat-value emerald";
+    } else {
+      dqSpan.textContent = "Recovered";
+      dqSpan.className = "stat-value warning";
+    }
   }
 
   // DQ Breakdown
   if (dqStats) {
-    document.getElementById('dq-clean').textContent = dqStats.CLEAN || dqStats.clean || 0;
-    document.getElementById('dq-recovered').textContent = dqStats.RECOVERED_TRANSACTION || dqStats.recovered || 0;
-    document.getElementById('dq-suspect').textContent = dqStats.SUSPECT || dqStats.suspect || 0;
-
+    const dqClean = document.getElementById('dq-clean');
+    const dqRecovered = document.getElementById('dq-recovered');
+    const dqSuspect = document.getElementById('dq-suspect');
     const dqNonTx = document.getElementById('dq-non-transaction');
+
+    if (dqClean) dqClean.textContent = dqStats.CLEAN || dqStats.clean || 0;
+    if (dqRecovered) dqRecovered.textContent = dqStats.RECOVERED_TRANSACTION || dqStats.recovered || 0;
+    if (dqSuspect) dqSuspect.textContent = dqStats.SUSPECT || dqStats.suspect || 0;
     if (dqNonTx) dqNonTx.textContent = dqStats.NON_TRANSACTION || dqStats.non_transaction || 0;
   }
 
@@ -662,90 +738,75 @@ function renderResults(data) {
     const actualEl = document.getElementById('recon-actual');
     const cardEl = document.getElementById('reconciliation-card');
 
-    statusEl.textContent = recon.status || 'N/A';
-    expectedEl.textContent = `$${(recon.expected_closing || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-    actualEl.textContent = `$${(recon.actual_closing || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+    if (statusEl) statusEl.textContent = recon.is_balanced ? 'Integrity Verified' : 'Discrepancy Detected';
+    if (expectedEl) expectedEl.textContent = `$${(recon.expected_closing || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+    if (actualEl) actualEl.textContent = `$${(recon.actual_closing || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
 
-    if (recon.is_balanced) {
-      cardEl.style.borderLeftColor = 'var(--success)';
-      statusEl.style.color = 'var(--success)';
-    } else {
-      cardEl.style.borderLeftColor = '#ef4444';
-      statusEl.style.color = '#ef4444';
+    if (cardEl) {
+      if (recon.is_balanced) {
+        cardEl.style.borderColor = 'var(--accent-glow)';
+        if (statusEl) statusEl.className = 'recon-status-text';
+      } else {
+        cardEl.style.borderColor = 'var(--error)';
+        if (statusEl) {
+          statusEl.className = 'recon-status-text';
+          statusEl.style.color = 'var(--error)';
+        }
+      }
     }
-  }
-
-  // Anomaly Stats
-  if (data.stats && data.stats.anomalies) {
-    const dups = data.stats.anomalies.duplicate_count;
-    const rounds = data.stats.anomalies.round_amounts;
-
-    let html = `<p style="font-size:0.8rem; margin-top:0.5rem; color:var(--text-muted)">Risk Signals:</p>`;
-
-    if (dups > 0) html += `<span class="tier-tag" style="background:#fee2e2; color:#ef4444; margin-right:0.5rem">⚠️ ${dups} Duplicates</span>`;
-    if (rounds > 0) html += `<span class="tier-tag" style="background:#ffedd5; color:#f97316">⚠️ ${rounds} Round Figures</span>`;
-
-    if (dups === 0 && rounds === 0) html += `<span class="tier-tag" style="background:#dcfce7; color:#166534">✅ No Anomalies</span>`;
-
-    let container = document.getElementById('anomaly-container');
-    if (!container) {
-      container = document.createElement('div');
-      container.id = 'anomaly-container';
-      container.style.marginTop = '1rem';
-      document.querySelector('#result-view').appendChild(container);
-    }
-    container.innerHTML = html;
   }
 
   const downloadBtn = document.getElementById('download-btn');
-  downloadBtn.href = data.download_url;
+  if (downloadBtn) downloadBtn.href = data.download_url;
 
-  // Render Preview Table (with Category and Flag)
-  const tbody = document.getElementById('preview-table').querySelector('tbody');
-  tbody.innerHTML = '';
+  // Render Preview Table
+  const previewTable = document.getElementById('preview-table');
+  if (previewTable) {
+    let tbody = previewTable.querySelector('tbody');
+    if (!tbody) {
+      tbody = document.createElement('tbody');
+      previewTable.appendChild(tbody);
+    }
+    tbody.innerHTML = '';
 
-  (data.preview || []).forEach(tx => {
-    const row = document.createElement('tr');
-    const isDebit = tx.tx_type === 'debit';
-    const isCredit = tx.tx_type === 'credit';
-    const dqFlag = tx.metadata?.dq_flag || 'clean';
-    const category = tx.category || 'Uncategorized';
+    (data.preview || []).forEach(tx => {
+      const row = document.createElement('tr');
+      const isDebit = tx.tx_type === 'debit';
+      const isCredit = tx.tx_type === 'credit';
+      const dqFlag = tx.metadata?.dq_flag || 'clean';
+      const category = tx.category || 'Uncategorized';
 
-    row.innerHTML = `
-      <td>${tx.post_date}</td>
-      <td>${tx.description}</td>
-      <td><span class="category-badge">${category}</span></td>
-      <td style="text-align:right">${isDebit ? tx.amount.toFixed(2) : '-'}</td>
-      <td style="text-align:right">${isCredit ? tx.amount.toFixed(2) : '-'}</td>
-      <td style="text-align:right; font-weight:600">${tx.balance ? tx.balance.toFixed(2) : '-'}</td>
-      <td><span class="flag-badge flag-${dqFlag}">${dqFlag.toUpperCase()}</span></td>
-    `;
-    tbody.appendChild(row);
-  });
-
-  // Render Summary Preview
-  const summaryDiv = document.getElementById('summary-preview');
-  if (data.stats && data.stats.financials) {
-    summaryDiv.classList.remove('hidden');
-    const fin = data.stats.financials;
-    document.getElementById('sum-credits').textContent = `$${fin.total_credits.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-    document.getElementById('sum-debits').textContent = `$${fin.total_debits.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
-    document.getElementById('sum-closing').textContent = `$${fin.closing_balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+      row.innerHTML = `
+          <td>${tx.post_date}</td>
+          <td class="tx-desc">${tx.description}</td>
+          <td><span class="category-badge">${category}</span></td>
+          <td style="text-align:right" class="${isDebit ? 'debit-val' : ''}">${isDebit ? tx.amount.toFixed(2) : '-'}</td>
+          <td style="text-align:right" class="${isCredit ? 'credit-val' : ''}">${isCredit ? tx.amount.toFixed(2) : '-'}</td>
+          <td style="text-align:right; font-weight:600">${tx.balance ? tx.balance.toFixed(2) : '-'}</td>
+          <td><span class="flag-badge flag-${dqFlag}">${dqFlag.toUpperCase()}</span></td>
+        `;
+      tbody.appendChild(row);
+    });
   }
 }
-
 function showView(viewName) {
-  uploadView.classList.add('hidden');
-  processingView.classList.add('hidden');
-  resultView.classList.add('hidden');
-  historyView.classList.add('hidden');
-  subscriptionView.classList.add('hidden');
+  const uploadView = document.getElementById('upload-view');
+  const processingView = document.getElementById('processing-view');
+  const resultView = document.getElementById('result-view');
+  const historyView = document.getElementById('history-view');
+  const subscriptionView = document.getElementById('subscription-view');
 
-  if (viewName === 'upload') uploadView.classList.remove('hidden');
-  if (viewName === 'processing') processingView.classList.remove('hidden');
-  if (viewName === 'result') resultView.classList.remove('hidden');
-  if (viewName === 'history') historyView.classList.remove('hidden');
-  if (viewName === 'subscription') subscriptionView.classList.remove('hidden');
+  if (uploadView) uploadView.classList.add('hidden');
+  if (processingView) processingView.classList.add('hidden');
+  if (resultView) resultView.classList.add('hidden');
+  if (historyView) historyView.classList.add('hidden');
+  if (subscriptionView) subscriptionView.classList.add('hidden');
+
+  if (viewName === 'upload' && uploadView) uploadView.classList.remove('hidden');
+  if (viewName === 'processing' && processingView) processingView.classList.remove('hidden');
+  if (viewName === 'result' && resultView) resultView.classList.remove('hidden');
+  if (viewName === 'history' && historyView) historyView.classList.remove('hidden');
+  if (viewName === 'subscription' && subscriptionView) subscriptionView.classList.remove('hidden');
 }
 
 function resetUI() {
@@ -756,15 +817,36 @@ function resetUI() {
   updateSizeLimitUI();
 }
 
+function estimateConversionTime(fileSize) {
+  const mb = fileSize / 1024 / 1024;
+  if (mb < 0.5) return "3-5 seconds";
+  if (mb < 2) return "10-20 seconds";
+  if (mb < 10) return "45-90 seconds";
+  return "~2-3 minutes";
+}
+
 function showFileTooLargeModal(actualSize, limit) {
   const modal = document.getElementById('limit-modal');
   const text = document.getElementById('limit-modal-text');
   const signupBtn = document.getElementById('limit-signup-btn');
   const actualMB = (actualSize / 1024 / 1024).toFixed(1);
   const limitMB = (limit / 1024 / 1024).toFixed(0);
+  const estTime = estimateConversionTime(actualSize);
 
   if (modal) {
-    text.innerHTML = `File is too large (<strong>${actualMB}MB</strong>). <br>Your current tier limit is <strong>${limitMB}MB</strong>. <br><br>Upgrade to <strong>QC Pro</strong> to process files up to 50MB.`;
+    text.innerHTML = `
+      <div style="margin-top:1.5rem; text-align:left; background:rgba(255,191,36,0.05); border:1px solid var(--warning); padding:1rem; border-radius: var(--radius-md);">
+        <p style="color:var(--warning); font-weight:800; font-size:0.7rem; text-transform:uppercase; margin-bottom:0.5rem;">⚠️ High Density Document</p>
+        <p style="color:var(--text-primary); font-size:0.9rem;">
+          This file is <strong>${actualMB}MB</strong>. Processing high-density statements of this size involves 
+          complex ETL orchestration and usually takes <strong>${estTime}</strong> for full normalization.
+        </p>
+      </div>
+      <p style="margin-top:1.5rem; font-size:0.9rem; color:var(--text-secondary);">
+        Your current tier limit is <strong>${limitMB}MB</strong>. 
+        Upgrade to <strong>QC Pro</strong> to process documents up to 50MB.
+      </p>
+    `;
     if (currentUser) {
       signupBtn.classList.add('hidden');
     } else {
@@ -832,6 +914,60 @@ async function showLegalModal(title, url) {
     legalModalBody.innerHTML = '<p style="color:red; text-align:center; padding:2rem;">Failed to load the policy content.</p>';
   }
 }
+
+// --- Mobile Info Modal Logic ---
+if (mobileInfoBtn && infoModal && closeInfoBtn) {
+  mobileInfoBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    infoModal.classList.remove('hidden');
+  });
+
+  closeInfoBtn.addEventListener('click', () => {
+    infoModal.classList.add('hidden');
+  });
+
+  // Close on outside click
+  infoModal.addEventListener('click', (e) => {
+    if (e.target === infoModal) {
+      infoModal.classList.add('hidden');
+    }
+  });
+
+  // Mobile Privacy Toggle Logic
+  const privacyTrigger = document.getElementById('mobile-privacy-trigger');
+  const privacyBack = document.getElementById('mobile-privacy-back');
+  const instructionsView = document.getElementById('mobile-instructions-view');
+  const privacyView = document.getElementById('mobile-privacy-view');
+  const modalTitle = document.getElementById('info-modal-title');
+
+  if (privacyTrigger && privacyBack && instructionsView && privacyView) {
+    privacyTrigger.addEventListener('click', () => {
+      instructionsView.classList.add('hidden');
+      privacyView.classList.remove('hidden');
+      if (modalTitle) modalTitle.textContent = "Privacy Policy";
+    });
+
+    privacyBack.addEventListener('click', () => {
+      privacyView.classList.add('hidden');
+      instructionsView.classList.remove('hidden');
+      if (modalTitle) modalTitle.textContent = "How It Works";
+    });
+
+    // Reset view when closing
+    const resetInfoModal = () => {
+      privacyView.classList.add('hidden');
+      instructionsView.classList.remove('hidden');
+      if (modalTitle) modalTitle.textContent = "How It Works";
+    };
+
+    closeInfoBtn.addEventListener('click', resetInfoModal);
+    infoModal.addEventListener('click', (e) => {
+      if (e.target === infoModal) resetInfoModal();
+    });
+  }
+}
+
+document.getElementById('reset-btn').addEventListener('click', resetUI);
 
 document.getElementById('reset-btn').addEventListener('click', resetUI);
 
