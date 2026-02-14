@@ -623,6 +623,13 @@ async function processFile(file) {
     }
   }
 
+  // 2. Local Quota Enforcer (Fail-Fast)
+  const limit = QUOTA_LIMITS[userTier];
+  if (usageCount >= limit) {
+    showLimitModal();
+    return;
+  }
+
   const estTimeVal = document.getElementById('estimated-time-val');
   if (estTimeVal) {
     estTimeVal.innerText = estimateConversionTime(file.size);
