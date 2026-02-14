@@ -36,50 +36,8 @@ class UniversalLoader:
             return self._generate_csv(transactions)
         elif target_format == "txt":
             return self._generate_text(transactions, audit_data)
-        elif target_format == "docx":
-            return self._generate_docx(transactions, audit_data)
         else:
             return self._generate_excel(transactions, audit_data)
-
-    def _generate_docx(self, transactions: List[Dict], audit_data: Dict[str, Any]) -> BytesIO:
-        """
-        [LEGACY/FUTURE] Export to structured Word Document.
-        Note: This is currently disabled in the UI to focus on finance-centric 
-        interoperability (XLSX, CSV).
-        """
-        import docx
-        from docx.shared import Inches
-        
-        doc = docx.Document()
-        doc.add_heading('Conversion Report', 0)
-        
-        doc.add_heading('Transaction Details', level=1)
-        table = doc.add_table(rows=1, cols=6)
-        table.style = 'Table Grid'
-        
-        hdr_cells = table.rows[0].cells
-        for i, h in enumerate(["Date", "Description", "Category", "Debit", "Credit", "Balance"]):
-            hdr_cells[i].text = h
-            hdr_cells[i].paragraphs[0].runs[0].bold = True
-            
-        for tx in transactions:
-            row_cells = table.add_row().cells
-            row_cells[0].text = str(tx.get("post_date"))
-            row_cells[1].text = str(tx.get("description"))
-            row_cells[2].text = str(tx.get("category", "Uncategorized"))
-            row_cells[3].text = f"{tx.get('amount'):.2f}" if tx.get('tx_type') == 'debit' else ""
-            row_cells[4].text = f"{tx.get('amount'):.2f}" if tx.get('tx_type') == 'credit' else ""
-            row_cells[5].text = f"{tx.get('balance'):.2f}" if tx.get('balance') else ""
-            
-        doc.add_page_break()
-        doc.add_heading('Audit Summary', level=1)
-        doc.add_paragraph(f"Processed: {audit_data.get('timestamp')}")
-        doc.add_paragraph(f"Hash: {audit_data.get('document_hash')}")
-        
-        output = BytesIO()
-        doc.save(output)
-        output.seek(0)
-        return output
 
     def _generate_excel(self, transactions: List[Dict], audit_data: Dict[str, Any]) -> BytesIO:
         """

@@ -27,6 +27,8 @@ let userTier = 'guest';
 let usageCount = 0;
 let currentUser = null;
 let isSignUpMode = false;
+let processingStartTime = 0;
+let timerInterval = null;
 
 const QUOTA_LIMITS = {
   'guest': 3,
@@ -501,14 +503,39 @@ function updateProgressUI(p, status, subStatus = "") {
   if (bar) bar.style.width = `${p}%`;
   if (percentTxt) percentTxt.innerText = `${p}%`;
   if (statusTxt) statusTxt.innerText = p === 100 ? "Success!" : status;
-  if (subStatusTxt) subStatusTxt.innerText = subStatus;
+
+  // Real-time Timer Logic
+  if (processingStartTime > 0 && p < 100) {
+    const elapsed = ((Date.now() - processingStartTime) / 1000).toFixed(1);
+    subStatusTxt.innerHTML = `${subStatus} <span style="color:var(--accent); font-weight:700; margin-left:8px;">⏱️ ${elapsed}s</span>`;
+  } else {
+    subStatusTxt.innerText = subStatus;
+  }
+}
+
+function startTimer() {
+  processingStartTime = Date.now();
+  timerInterval = setInterval(() => {
+    const elapsed = ((Date.now() - processingStartTime) / 1000).toFixed(1);
+    const subStatusTxt = document.getElementById('progress-sub-status');
+    if (subStatusTxt && processingStartTime > 0) {
+      // We keep the last subStatus but update the timer
+      const currentText = subStatusTxt.innerText.split('⏱️')[0];
+      subStatusTxt.innerHTML = `${currentText} <span style="color:var(--accent); font-weight:700; margin-left:8px;">⏱️ ${elapsed}s</span>`;
+    }
+  }, 100);
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  processingStartTime = 0;
 }
 
 async function processFile(file) {
   // 1. Check Size Constraint
   const maxSize = TIER_LIMITS[userTier] || TIER_LIMITS['guest'];
   if (file.size > maxSize) {
-    alert(`File is too large (${(file.size / 1024 / 1024).toFixed(1)}MB). Max for your tier is ${maxSize / 1024 / 1024}MB.`);
+    showFileTooLargeModal(file.size, maxSize);
     return;
   }
   // 1b. Check Extension Constraint (for Drag-and-Drop)
@@ -522,6 +549,7 @@ async function processFile(file) {
   }
 
   showView('processing');
+  startTimer();
   updateProgressUI(0, "Connecting to Auditor...", "Establishing Secure Stream");
 
   const formData = new FormData();
@@ -531,6 +559,7 @@ async function processFile(file) {
   formData.append('tier', userTier);
   if (currentUser) {
     formData.append('user_id', currentUser.id);
+    formData.append('user_email', currentUser.email);
   }
 
   try {
@@ -565,11 +594,13 @@ async function processFile(file) {
           const chunk = JSON.parse(line);
 
           if (chunk.status === 'success') {
+            stopTimer();
             updateProgressUI(100, "Done", "Rendering data...");
             renderResults(chunk);
             updateQuotaFromResponse(chunk.usage);
             return;
           } else if (chunk.status === 'failed' || chunk.status === 'limit_reached') {
+            stopTimer();
             if (chunk.status === 'limit_reached') {
               showLimitModal();
             } else {
@@ -586,6 +617,7 @@ async function processFile(file) {
       }
     }
   } catch (err) {
+    stopTimer();
     console.error(err);
     alert('Network error or server failed to respond.');
     resetUI();
@@ -722,6 +754,25 @@ function resetUI() {
   // Ensure the correct title is restored
   toolTitle.textContent = toolConfig[currentTool].title;
   updateSizeLimitUI();
+}
+
+function showFileTooLargeModal(actualSize, limit) {
+  const modal = document.getElementById('limit-modal');
+  const text = document.getElementById('limit-modal-text');
+  const signupBtn = document.getElementById('limit-signup-btn');
+  const actualMB = (actualSize / 1024 / 1024).toFixed(1);
+  const limitMB = (limit / 1024 / 1024).toFixed(0);
+
+  if (modal) {
+    text.innerHTML = `File is too large (<strong>${actualMB}MB</strong>). <br>Your current tier limit is <strong>${limitMB}MB</strong>. <br><br>Upgrade to <strong>QC Pro</strong> to process files up to 50MB.`;
+    if (currentUser) {
+      signupBtn.classList.add('hidden');
+    } else {
+      signupBtn.classList.remove('hidden');
+    }
+    modal.classList.remove('hidden');
+    resetUI();
+  }
 }
 
 const legalModal = document.getElementById('legal-modal');

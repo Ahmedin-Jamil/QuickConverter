@@ -117,33 +117,6 @@ class TextParser(BaseParser):
             "source_file": file_path
         }
 
-class DocxParser(BaseParser):
-    def parse(self, file_path: str) -> Dict[str, Any]:
-        import docx
-        doc = docx.Document(file_path)
-        fragments = []
-        raw_text_parts = []
-        
-        for para in doc.paragraphs:
-            if para.text.strip():
-                raw_text_parts.append(para.text)
-                
-        for table in doc.tables:
-            for row in table.rows:
-                fragments.append({
-                    "type": "table_row",
-                    "data": [cell.text for cell in row.cells],
-                    "page_number": 1
-                })
-                
-        file_hash = self.get_file_hash(file_path)
-        return {
-            "document_hash": file_hash,
-            "fragments": fragments,
-            "raw_text": "\n".join(raw_text_parts),
-            "source_file": file_path
-        }
-
 class ParserFactory:
     @staticmethod
     def get_parser(file_type: str) -> BaseParser:
@@ -154,7 +127,5 @@ class ParserFactory:
             return CSVParser()
         elif ft == 'txt':
             return TextParser()
-        elif ft == 'docx':
-            return DocxParser()
         else:
             raise ValueError(f"Unsupported file type: {file_type}")

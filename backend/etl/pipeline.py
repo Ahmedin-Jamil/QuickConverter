@@ -129,8 +129,7 @@ class ETLPipeline:
             }
             
         except Exception as e:
-            import traceback
-            traceback.print_exc()
+            logging.exception("PIPELINE_ERROR")
             yield 0, f"Error: {str(e)}", {
                 "success": False,
                 "error": str(e),

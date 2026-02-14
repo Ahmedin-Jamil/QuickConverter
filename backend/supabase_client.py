@@ -60,7 +60,7 @@ class SupabaseLogger:
             logging.error(f"Failed to update user tier: {e}")
             return False
 
-    def log_conversion(self, stats: Dict[str, Any], user_id: str = None, tool_type: str = "general", geo: Dict = None, browser: str = None, ip: str = None) -> None:
+    def log_conversion(self, stats: Dict[str, Any], user_id: str = None, tool_type: str = "general", browser: str = None, ip: str = None) -> None:
         """
         Log conversion metrics to 'conversions' table with geo/tool data.
         """
@@ -88,8 +88,6 @@ class SupabaseLogger:
                 "dq_suspect": dq_stats.get("SUSPECT", dq_stats.get("suspect", 0)),
                 "dq_non_transaction": dq_stats.get("NON_TRANSACTION", dq_stats.get("non_transaction", 0)),
                 "tool_type": tool_type,
-                "country": geo.get("country", "Unknown") if geo else "Unknown",
-                "city": geo.get("city", "Unknown") if geo else "Unknown",
                 "ip_address": ip if ip else "Unknown",
                 "created_at": datetime.now().isoformat()
             }
@@ -100,7 +98,7 @@ class SupabaseLogger:
         except Exception as e:
             logging.error(f"Failed to log to Supabase: {e}")
 
-    def log_event(self, event_type: str, element: str, user_id: str = None, geo: Dict = None) -> None:
+    def log_event(self, event_type: str, element: str, user_id: str = None) -> None:
         """
         Log UI events (clicks, navigations) for heatmaps/behavioral analysis.
         """
@@ -111,8 +109,6 @@ class SupabaseLogger:
                 "user_id": user_id,
                 "event_type": event_type,
                 "element": element,
-                "country": geo.get("country", "Unknown") if geo else "Unknown",
-                "city": geo.get("city", "Unknown") if geo else "Unknown",
                 "created_at": datetime.now().isoformat()
             }
             client.table("events").insert(payload).execute()

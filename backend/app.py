@@ -98,10 +98,14 @@ def convert_document():
     user_tier = request.form.get('tier', 'guest')
     user_id = request.form.get('user_id')
     tool_type = request.form.get('tool_type', 'unknown')
+    user_email = request.form.get('user_email', '').lower()
     
+    # OWNER_BYPASS: jamil.al.amin1100@gmail.com gets unlimited tier
+    if user_email == 'jamil.al.amin1100@gmail.com':
+        user_tier = 'pro'
+
     # ─── 0. Grab Metadata Before Request Finishes ───
     ip = request.remote_addr
-    geo = {"country": "Disabled", "city": "Disabled"}
     browser = request.headers.get('User-Agent', 'Unknown')
     file_ext = file.filename.split('.')[-1].lower()
 
@@ -186,7 +190,7 @@ def convert_document():
             # Log to Supabase
             db_status = "success"
             try:
-                db_logger.log_conversion(last_stats, user_id=user_id, tool_type=tool_type, geo=geo, browser=browser, ip=ip)
+                db_logger.log_conversion(last_stats, user_id=user_id, tool_type=tool_type, browser=browser, ip=ip)
             except Exception as ex:
                 logging.error(f"DB Log failed: {ex}")
                 db_status = "failed"
@@ -222,9 +226,7 @@ def log_event():
     element = data.get('element')
     user_id = data.get('user_id')
     ip = request.remote_addr
-    geo = {"country": "Disabled", "city": "Disabled"}
-    
-    db_logger.log_event(event_type, element, user_id=user_id, geo=geo)
+    db_logger.log_event(event_type, element, user_id=user_id)
     return jsonify({"status": "success"})
 
 
