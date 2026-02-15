@@ -270,6 +270,12 @@ async function fetchUsage(targetTier) {
     const res = await fetch(url);
     const data = await res.json();
     usageCount = data.used || 0;
+
+    // Auto-correct tier based on response
+    if (data.limit === 'unlimited' || data.limit > 50) {
+      userTier = 'pro';
+    }
+
     updateQuotaDisplay();
   } catch (err) {
     console.warn("Failed to fetch usage quota", err);

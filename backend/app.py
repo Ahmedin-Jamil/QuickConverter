@@ -62,6 +62,14 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 
 # Usage stores removed (replaced by Supabase persistence)
 
+def get_client_ip():
+    """Robust IP extraction for Render/Proxies"""
+    xff = request.headers.get('X-Forwarded-For')
+    if xff:
+        return xff.split(',')[0].strip()
+    return request.remote_addr
+
+
 # Initialize Pipeline & Logger
 etl_pipeline = ETLPipeline()
 db_logger = SupabaseLogger()
@@ -80,8 +88,7 @@ def get_user_usage():
         return jsonify({"used": 0, "limit": "unlimited"})
         
     if tier == 'guest':
-        xff = request.headers.get('X-Forwarded-For')
-        ip = xff.split(',')[0].strip() if xff else request.remote_addr
+        ip = get_client_ip()
         used = db_logger.get_user_usage_count(ip=ip)
         return jsonify({"used": used, "limit": 3})
 
@@ -114,8 +121,7 @@ def convert_document():
 
     # ─── 0. Grab Metadata Before Request Finishes ───
     # On Render, the real IP is in X-Forwarded-For
-    xff = request.headers.get('X-Forwarded-For')
-    ip = xff.split(',')[0].strip() if xff else request.remote_addr
+    ip = get_client_ip()
     browser = request.headers.get('User-Agent', 'Unknown')
     file_ext = file.filename.split('.')[-1].lower()
 
@@ -242,7 +248,7 @@ def log_event():
     event_type = data.get('event_type')
     element = data.get('element')
     user_id = data.get('user_id')
-    ip = request.remote_addr
+    ip = get_client_ip()
     db_logger.log_event(event_type, element, user_id=user_id)
     return jsonify({"status": "success"})
 
@@ -307,6 +313,15 @@ def get_subscription_portal():
 
 
 # API_BASE_URL moved to top for scope visibility
+
+@app.route('/debug/ip', methods=['GET'])
+def debug_ip():
+    return jsonify({
+        "ip": get_client_ip(),
+        "xff": request.headers.get('X-Forwarded-For'),
+        "remote": request.remote_addr
+    })
+
 
 if __name__ == '__main__':
     # Use environment port for Render/Railway
