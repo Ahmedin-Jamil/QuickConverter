@@ -2190,3 +2190,28 @@ h1 {
         grid-template-columns: 1fr;
     }
 }
+/* Tier Badges */
+.tier-tag {
+    font-size: 0.6rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    display: inline-block;
+    width: fit-content;
+    margin-top: 0.2rem;
+}
+
+.tier-tag.pro-tier {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--accent);
+    border-color: rgba(16, 185, 129, 0.2);
+}
+
+#display-user-name {
+    line-height: 1.2;
+}

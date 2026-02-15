@@ -140,10 +140,10 @@ def convert_document():
         # Inside the generator, we ONLY use strings (temp_path, user_id, etc.)
         # NO more accessing request.files['file']
         
+        # Quota Logic (Check before processing)
         usage_used = 0
-        usage_limit = 0
+        usage_limit = size_limits.get(user_tier, 2) # Reuse for file size but overwrite for count
 
-        # Quota Logic
         if user_tier == 'guest':
             usage_used = db_logger.get_user_usage_count(ip=ip)
             usage_limit = 3
@@ -158,6 +158,8 @@ def convert_document():
                     yield json.dumps({"status": "limit_reached", "error": "Free tier limit reached (10 conversions)."}) + "\n"
                     return
             except: pass
+        elif user_tier == 'pro':
+            usage_limit = 999999 # Representing Unlimited effectively
 
         yield json.dumps({"p": 5, "status": "Initializing..."}) + "\n"
 
@@ -205,6 +207,11 @@ def convert_document():
                 logging.error(f"DB Log failed: {ex}")
                 db_status = "failed"
 
+            # Prepare Usage Metadata (Optimistic increment to avoid DB propagation race)
+            optimistic_count = usage_used + 1
+            if user_tier == 'pro':
+                optimistic_count = 0 # Pro doesn't need a visible counter increment often
+
             # Final Success Frame
             yield json.dumps({
                 "status": "success",
@@ -215,9 +222,9 @@ def convert_document():
                 "processing_time_ms": last_stats["processing_time_ms"],
                 "dq_summary": last_stats["dq_stats"],
                 "preview": final_result.get("preview_data", []),
-                "download_url": f"https://quickconverter-2wn9.onrender.com/download/{out_filename}",
+                "download_url": f"{API_BASE_URL}/download/{out_filename}",
                 "document_hash": last_stats["document_hash"],
-                "usage": {"used": db_logger.get_user_usage_count(user_id=user_id, ip=ip), "limit": usage_limit},
+                "usage": {"used": optimistic_count, "limit": usage_limit},
                 "db_log": db_status
             }) + "\n"
 

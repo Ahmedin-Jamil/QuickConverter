@@ -86,6 +86,7 @@ async function init() {
   setupUpload();
   setupLegalLinks();
   setupFlipCard();
+  // Initial quota display (placeholder until fetch finishes)
   updateQuotaDisplay();
 
   // Sidebar Toggle Logic
@@ -184,6 +185,9 @@ async function handleAuthStateChange(session) {
 
       if (profile) {
         userTier = profile.tier || 'guest';
+        // OWNER BYPASS: matching backend logic
+        if (currentUser.email === 'jamil.al.amin1100@gmail.com') userTier = 'pro';
+
         document.getElementById('user-avatar-small').textContent = (profile.full_name || 'U')[0].toUpperCase();
 
         // Update badge display
@@ -280,7 +284,7 @@ function updateQuotaDisplay() {
 
   if (!quotaSection) return;
 
-  if (limit === Infinity) {
+  if (limit === Infinity || userTier === 'pro') {
     quotaSection.classList.add('hidden');
     return;
   }

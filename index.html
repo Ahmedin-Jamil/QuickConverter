@@ -265,7 +265,7 @@
           style="padding: 0.8rem; margin-bottom: 0.5rem; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 0.5rem;">
           <div style="display:flex; justify-content:space-between; font-size:0.7rem; margin-bottom:0.4rem;">
             <span style="color:var(--text-secondary); font-weight:600;">Monthly Limit</span>
-            <span id="quota-label" style="color:var(--text-primary); font-weight:700;">0/0</span>
+            <span id="quota-label" style="color:var(--text-primary); font-weight:700;">- / -</span>
           </div>
           <div style="height: 4px; background: var(--border-bright); border-radius: 2px; overflow: hidden;">
             <div id="quota-bar"
@@ -282,6 +282,7 @@
             <div style="display:flex; flex-direction:column;">
               <span id="display-user-name"
                 style="font-weight:600; font-size:0.85rem; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:110px;">Guest</span>
+              <span id="display-tier-badge" class="tier-tag">3 Conversions</span>
             </div>
           </div>
           <button id="sign-out-btn-footer" class="btn-icon hidden" title="Sign Out">
