@@ -268,8 +268,8 @@ function showLimitModal() {
 async function fetchUsage(targetTier) {
   const tier = targetTier || userTier;
   const url = currentUser
-    ? `${API_BASE_URL}/user/usage?user_id=${currentUser.id}&tier=${tier}`
-    : `${API_BASE_URL}/user/usage?tier=guest`;
+    ? `${API_BASE_URL}/user/usage?user_id=${currentUser.id}&tier=${tier}&t=${Date.now()}`
+    : `${API_BASE_URL}/user/usage?tier=guest&t=${Date.now()}`;
 
   try {
     const res = await fetch(url);

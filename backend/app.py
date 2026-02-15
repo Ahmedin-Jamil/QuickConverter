@@ -48,11 +48,17 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": [
     "https://q-convert.com", 
     "https://www.q-convert.com",
-    "http://localhost:5173", 
-    "http://localhost:5174",
-    "http://localhost:3000",
-    "http://localhost:3001"
-]}})
+    "http://q-convert.com",
+    "http://www.q-convert.com",
+    "http://localhost:5173",
+    "http://localhost:3000"
+], "methods": ["GET", "POST", "OPTIONS"], "allow_headers": ["Content-Type", "Authorization", "X-Forwarded-For"]}})
+
+@app.after_request
+def after_request(response):
+    response.headers.add('Access-Control-Allow-Headers', 'Content-Type,Authorization,X-Forwarded-For')
+    response.headers.add('Access-Control-Allow-Methods', 'GET,PUT,POST,DELETE,OPTIONS')
+    return response
 
 # Folders
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'temp_uploads')
