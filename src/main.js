@@ -584,19 +584,17 @@ function startTimer() {
   processingStartTime = Date.now();
   if (timerInterval) clearInterval(timerInterval);
   timerInterval = setInterval(() => {
+    const elapsedEl = document.getElementById('elapsed-timer-val');
     const percentTxt = document.getElementById('progress-percent');
-    const subStatusTxt = document.getElementById('progress-sub-status');
 
     // Check if we are in an error state (percentTxt would be "!")
     const isError = percentTxt && percentTxt.innerText === "!";
     const pStr = percentTxt ? percentTxt.innerText.replace('%', '') : "0";
     const p = parseInt(pStr) || 0;
 
-    if (processingStartTime > 0 && p < 100 && !isError && subStatusTxt) {
+    if (processingStartTime > 0 && p < 100 && !isError && elapsedEl) {
       const elapsed = ((Date.now() - processingStartTime) / 1000).toFixed(1);
-      // Keep base status text but append timer
-      const baseText = subStatusTxt.innerText.split('⏱️')[0].trim();
-      subStatusTxt.innerHTML = `${baseText} <span style="color:var(--accent); font-weight:700; margin-left:8px;">⏱️ ${elapsed}s</span>`;
+      elapsedEl.innerText = `${elapsed}s`;
     }
   }, 100);
 }
@@ -813,15 +811,9 @@ function renderResults(data) {
   if (downloadBtn) downloadBtn.href = data.download_url;
 
   // Render Preview Table
-  const previewTable = document.getElementById('preview-table');
-  if (previewTable) {
-    let tbody = previewTable.querySelector('tbody');
-    if (!tbody) {
-      tbody = document.createElement('tbody');
-      previewTable.appendChild(tbody);
-    }
+  const tbody = document.getElementById('preview-tbody');
+  if (tbody) {
     tbody.innerHTML = '';
-
     (data.preview || []).forEach(tx => {
       const row = document.createElement('tr');
       const isDebit = tx.tx_type === 'debit';
@@ -831,7 +823,7 @@ function renderResults(data) {
 
       row.innerHTML = `
           <td>${tx.post_date}</td>
-          <td class="tx-desc">${tx.description}</td>
+          <td class="tx-desc" title="${tx.description}">${tx.description}</td>
           <td><span class="category-badge">${category}</span></td>
           <td style="text-align:right" class="${isDebit ? 'debit-val' : ''}">${isDebit ? tx.amount.toFixed(2) : '-'}</td>
           <td style="text-align:right" class="${isCredit ? 'credit-val' : ''}">${isCredit ? tx.amount.toFixed(2) : '-'}</td>

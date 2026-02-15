@@ -924,25 +924,94 @@ h1 {
     border: 1px solid var(--border);
     border-radius: var(--radius-lg);
     display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
+    gap: 3rem;
     width: 100%;
 }
 
+.est-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+}
 
+.est-divider {
+    width: 1px;
+    height: 30px;
+    background: var(--border);
+}
 
 .est-label {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     text-transform: uppercase;
     font-weight: 800;
     color: var(--text-muted);
-    letter-spacing: 0.05em;
+    letter-spacing: 0.08em;
 }
 
 .est-val {
-    font-size: 0.9rem;
-    font-weight: 700;
+    font-size: 1rem;
+    font-weight: 800;
     color: var(--accent);
+    font-family: 'Outfit', sans-serif;
+}
+
+/* Premium Table Styles for Results */
+.table-premium-container {
+    overflow: auto;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    max-height: 500px;
+    box-shadow: var(--shadow-md);
+    position: relative;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+}
+
+.table-premium {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.table-premium thead th {
+    position: sticky;
+    top: 0;
+    background: var(--bg-secondary);
+    padding: 1.25rem 1rem;
+    color: var(--text-muted);
+    font-weight: 800;
+    text-transform: uppercase;
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    border-bottom: 2px solid var(--border);
+    z-index: 10;
+}
+
+.table-premium td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--border);
+    color: var(--text-secondary);
+    vertical-align: middle;
+}
+
+.table-premium tr:last-child td {
+    border-bottom: none;
+}
+
+.table-premium tr:hover td {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+}
+
+.tx-desc {
+    max-width: 300px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 /* Result Dashboard & History Panel */

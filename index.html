@@ -410,8 +410,15 @@
               <p id="progress-sub-status" class="status-sub">Detecting High-Density Structures...</p>
 
               <div id="estimated-time-container" class="estimation-box">
-                <span class="est-label">Estimated Completion</span>
-                <span id="estimated-time-val" class="est-val">Calculating...</span>
+                <div class="est-item">
+                  <span class="est-label">Elapsed Time</span>
+                  <span id="elapsed-timer-val" class="est-val">0.0s</span>
+                </div>
+                <div class="est-divider"></div>
+                <div class="est-item">
+                  <span class="est-label">Est. Completion</span>
+                  <span id="estimated-time-val" class="est-val">Calculating...</span>
+                </div>
               </div>
             </div>
           </div>
@@ -501,22 +508,11 @@
             </div>
           </div>
 
-          <!-- Preview Table -->
-          <div class="preview-section">
-            <h4 class="preview-title">Raw Distribution Preview</h4>
-            <div class="table-container">
-              <table id="preview-table" class="table-preview">
-                <!-- Data injected here -->
-              </table>
-            </div>
-          </div>
-
           <!-- Transaction Preview (with Categories) -->
           <div class="mt-4" style="text-align:left;">
-            <p class="nav-label">Transaction Preview (with Categories)</p>
-            <div
-              style="overflow-x:auto; background:var(--bg-tertiary); border-radius:0.5rem; padding:1rem; min-height:100px;">
-              <table class="table-preview" id="preview-table-detailed">
+            <p class="nav-label">Extracted Transaction Ledger (Verification Preview)</p>
+            <div class="table-premium-container">
+              <table class="table-premium" id="preview-table">
                 <thead>
                   <tr>
                     <th>Date</th>
@@ -528,7 +524,7 @@
                     <th>Flag</th>
                   </tr>
                 </thead>
-                <tbody>
+                <tbody id="preview-tbody">
                   <!-- Preview rows here -->
                 </tbody>
               </table>
