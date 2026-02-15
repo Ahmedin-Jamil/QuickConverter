@@ -676,46 +676,57 @@ async function processFile(file) {
         if (!line.trim()) continue;
         try {
           const chunk = JSON.parse(line);
-
-          if (chunk.status === 'success') {
-            stopTimer();
-            updateProgressUI(100, "Success", "Rendering ledger...");
-            renderResults(chunk);
-            updateQuotaFromResponse(chunk.usage);
-            return;
-          } else if (chunk.status === 'failed' || chunk.status === 'limit_reached') {
-            stopTimer();
-            if (chunk.status === 'limit_reached') {
-              updateProgressUI(0, "Limit Reached", "Monthly quota exceeded. Please upgrade.", true);
-              showLimitModal();
-              addErrorResetButton();
-            } else {
-              updateProgressUI(0, "Processing Error", chunk.error || 'Extraction failed', true);
-              addErrorResetButton();
-            }
-            return;
-          } else if (typeof chunk.p !== 'undefined') {
-            // Mapping backend statuses to more "value-driven" Elite copy
-            let status = chunk.status;
-            let sub = chunk.sub || "";
-
-            if (chunk.p < 30) {
-              status = "Parsing Data Structures...";
-              sub = "Executing OCR & Layout Assessment";
-            } else if (chunk.p < 60) {
-              status = "Normalizing Transactions...";
-              sub = "Applying Deterministic Cleaning Rules";
-            } else if (chunk.p < 90) {
-              status = "Reconciling Balances...";
-              sub = "Validating Mathematical Integrity";
-            }
-
-            updateProgressUI(chunk.p, status, sub);
-          }
+          if (handleChunk(chunk)) return;
         } catch (e) {
           console.warn("Error parsing chunk", e, line);
         }
       }
+    }
+
+    // Process final buffer if stream closed but last chunk remained
+    if (buffer.trim()) {
+      try {
+        const chunk = JSON.parse(buffer);
+        handleChunk(chunk);
+      } catch (e) {
+        console.warn("Error parsing final buffer", e, buffer);
+      }
+    }
+
+    function handleChunk(chunk) {
+      if (chunk.status === 'success') {
+        stopTimer();
+        updateProgressUI(100, "Success", "Rendering ledger...");
+        renderResults(chunk);
+        updateQuotaFromResponse(chunk.usage);
+        return true;
+      } else if (chunk.status === 'failed' || chunk.status === 'limit_reached') {
+        stopTimer();
+        if (chunk.status === 'limit_reached') {
+          updateProgressUI(0, "Limit Reached", "Monthly quota exceeded. Please upgrade.", true);
+          showLimitModal();
+          addErrorResetButton();
+        } else {
+          updateProgressUI(0, "Processing Error", chunk.error || 'Extraction failed', true);
+          addErrorResetButton();
+        }
+        return true;
+      } else if (typeof chunk.p !== 'undefined') {
+        let status = chunk.status;
+        let sub = chunk.sub || "";
+        if (chunk.p < 30) {
+          status = "Parsing Data Structures...";
+          sub = "Executing OCR & Layout Assessment";
+        } else if (chunk.p < 60) {
+          status = "Normalizing Transactions...";
+          sub = "Applying Deterministic Cleaning Rules";
+        } else if (chunk.p < 90) {
+          status = "Reconciling Balances...";
+          sub = "Validating Mathematical Integrity";
+        }
+        updateProgressUI(chunk.p, status, sub);
+      }
+      return false;
     }
   } catch (err) {
     stopTimer();
