@@ -45,7 +45,14 @@ except ImportError as e:
 
 app = Flask(__name__)
 # Enable CORS for production (Allow specific domain or all for simplicity in MVP)
-CORS(app, resources={r"/*": {"origins": ["https://q-convert.com", "http://localhost:5173", "http://localhost:3000"]}})
+CORS(app, resources={r"/*": {"origins": [
+    "https://q-convert.com", 
+    "https://www.q-convert.com",
+    "http://localhost:5173", 
+    "http://localhost:5174",
+    "http://localhost:3000",
+    "http://localhost:3001"
+]}})
 
 # Folders
 UPLOAD_FOLDER = os.path.join(os.getcwd(), 'temp_uploads')
@@ -73,7 +80,8 @@ def get_user_usage():
         return jsonify({"used": 0, "limit": "unlimited"})
         
     if tier == 'guest':
-        ip = request.remote_addr
+        xff = request.headers.get('X-Forwarded-For')
+        ip = xff.split(',')[0].strip() if xff else request.remote_addr
         used = db_logger.get_user_usage_count(ip=ip)
         return jsonify({"used": used, "limit": 3})
 
@@ -105,7 +113,9 @@ def convert_document():
         user_tier = 'pro'
 
     # ─── 0. Grab Metadata Before Request Finishes ───
-    ip = request.remote_addr
+    # On Render, the real IP is in X-Forwarded-For
+    xff = request.headers.get('X-Forwarded-For')
+    ip = xff.split(',')[0].strip() if xff else request.remote_addr
     browser = request.headers.get('User-Agent', 'Unknown')
     file_ext = file.filename.split('.')[-1].lower()
 

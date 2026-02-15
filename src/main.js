@@ -926,7 +926,10 @@ function setupLegalLinks() {
   Object.entries(links).forEach(([id, config]) => {
     const el = document.getElementById(id);
     if (el) {
-      el.addEventListener('click', () => showLegalModal(config.title, config.url));
+      el.addEventListener('click', (e) => {
+        e.preventDefault();
+        showLegalModal(config.title, config.url);
+      });
     }
   });
 
