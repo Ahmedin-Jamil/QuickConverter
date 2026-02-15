@@ -163,7 +163,12 @@ async function init() {
       });
     } catch (err) {
       console.error("Supabase session check failed:", err);
+      // Fallback for guest mode if Auth fails
+      fetchUsage('guest');
     }
+  } else {
+    // Supabase not configured -> Guest Mode
+    fetchUsage('guest');
   }
 }
 
@@ -269,6 +274,7 @@ async function fetchUsage(targetTier) {
   try {
     const res = await fetch(url);
     const data = await res.json();
+    console.log('[DEBUG-USAGE] Fetch:', data, 'Current Tier:', userTier);
     usageCount = data.used || 0;
 
     // Auto-correct tier based on response

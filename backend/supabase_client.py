@@ -250,3 +250,7 @@ class SupabaseLogger:
         except Exception as e:
             logging.error(f"Failed to fetch trends: {e}")
             return []
+
+    def log_conversion(self, stats: Dict[str, Any], user_id: str = None, tool_type: str = 'general', browser: str = None, ip: str = None) -> None:
+        logging.info(f'Logging conversion for IP: {ip}, User: {user_id}')
+        # ... rest of function
