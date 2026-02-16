@@ -26,13 +26,13 @@ class SupabaseLogger:
                 self.client = create_client(self.url, self.key)
                 if self.service_key:
                     self.admin_client = create_client(self.url, self.service_key)
-                logging.info(f"Supabase initialized. Master: {bool(self.admin_client)}")
+                logging.info(f"Supabase initialized. Admin (Master): {bool(self.admin_client)}")
             except Exception as e:
                 self.last_error = f"Init Error: {str(e)}"
                 logging.warning(self.last_error)
 
     def log_conversion(self, stats: Dict[str, Any], user_id: str = None, tool_type: str = "general", browser: str = None, ip: str = None) -> None:
-        # Crucial: Use Admin Client to bypass RLS
+        # Use Admin Client to bypass RLS
         client = self.admin_client or self.client
         if not client:
              self.last_error = "Log Error: No Supabase client initialized."
@@ -40,6 +40,7 @@ class SupabaseLogger:
 
         try:
             dq_stats = stats.get("dq_stats", {}) if stats else {}
+            # Payload without explicit created_at to let Supabase handle it with default
             payload = {
                 "user_id": user_id,
                 "document_hash": stats.get("document_hash") if stats else "unknown",
@@ -51,8 +52,7 @@ class SupabaseLogger:
                 "dq_suspect": dq_stats.get("SUSPECT", dq_stats.get("suspect", 0)),
                 "dq_non_transaction": dq_stats.get("NON_TRANSACTION", dq_stats.get("non_transaction", 0)),
                 "tool_type": tool_type,
-                "ip_address": ip if ip else "Unknown",
-                "created_at": datetime.now().isoformat()
+                "ip_address": ip if ip else "Unknown"
             }
             
             # Try inserting. If it fails, maybe the column name is 'ip' instead of 'ip_address'
@@ -83,25 +83,20 @@ class SupabaseLogger:
         if not client: return 0
             
         try:
+            # Filter by current month
             start_of_month = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
-            query = client.table("conversions").select("id", count="exact")
-            query = query.gte("created_at", start_of_month)
             
             if user_id:
-                query = query.eq("user_id", user_id)
+                res = client.table("conversions").select("id", count="exact").gte("created_at", start_of_month).eq("user_id", user_id).execute()
+                return res.count if hasattr(res, 'count') else len(res.data)
             elif ip:
-                # Try to count by matching either column if we aren't sure of schema yet
+                # Try both 'ip_address' and 'ip' for reading
                 try:
-                    res = query.eq("ip_address", ip).execute()
-                    count = res.count if hasattr(res, 'count') else len(res.data)
-                    return count
+                    res = client.table("conversions").select("id", count="exact").gte("created_at", start_of_month).eq("ip_address", ip).execute()
+                    return res.count if hasattr(res, 'count') else len(res.data)
                 except:
-                    # Fallback to 'ip' column if 'ip_address' fails
-                    query = client.table("conversions").select("id", count="exact")
-                    query = query.gte("created_at", start_of_month)
-                    res = query.eq("ip", ip).execute()
-                    count = res.count if hasattr(res, 'count') else len(res.data)
-                    return count
+                    res = client.table("conversions").select("id", count="exact").gte("created_at", start_of_month).eq("ip", ip).execute()
+                    return res.count if hasattr(res, 'count') else len(res.data)
             else:
                 return 0
         except Exception as e:
@@ -116,8 +111,7 @@ class SupabaseLogger:
             payload = {
                 "user_id": user_id,
                 "event_type": event_type,
-                "element": element,
-                "created_at": datetime.now().isoformat()
+                "element": element
             }
             client.table("events").insert(payload).execute()
         except Exception as e:

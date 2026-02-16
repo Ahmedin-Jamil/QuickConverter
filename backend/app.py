@@ -69,7 +69,13 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 # Usage stores removed (replaced by Supabase persistence)
 
 def get_client_ip():
-    """Robust IP extraction for Render/Proxies"""
+    """Robust IP extraction for Render/Cloudflare/Proxies"""
+    # 1. Cloudflare Priority (since q-convert.com is on CF)
+    cf = request.headers.get('Cf-Connecting-Ip')
+    if cf:
+        return cf
+
+    # 2. Render Proxy
     xff = request.headers.get('X-Forwarded-For')
     if xff:
         return xff.split(',')[0].strip()
@@ -327,6 +333,14 @@ def debug_ip():
         "xff": request.headers.get('X-Forwarded-For'),
         "remote": request.remote_addr
     })
+
+@app.route('/debug/log-dump', methods=['GET'])
+def debug_log_dump():
+    try:
+        res = db_logger.admin_client.table("conversions").select("*").order("created_at", desc=True).limit(5).execute()
+        return jsonify(res.data)
+    except Exception as e:
+        return jsonify({"error": str(e)})
 
 @app.route('/debug/supabase', methods=['GET'])
 def debug_supabase():
