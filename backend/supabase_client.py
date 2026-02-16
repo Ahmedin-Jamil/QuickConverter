@@ -41,73 +41,65 @@ class SupabaseLogger:
                 logging.warning(self.last_error)
 
     def log_conversion(self, stats: Dict[str, Any], user_id: str = None, tool_type: str = "general", browser: str = None, ip: str = None) -> bool:
-        """Logs conversion with aggressive resilience to schema mismatches."""
+        """Logs conversion with a [HARDENED-V3] Minimal-First strategy."""
         client = self.admin_client or self.client
         if not client:
-             self.last_error = "Log Error: No Supabase client initialized."
+             self.last_error = "[V3] No client"
              return False
 
         try:
             dq_stats = stats.get("dq_stats", {}) if stats else {}
-            # Start with a conservative payload based on common denominator
+            
+            # THE CORE PAYLOAD - These columns are 100% confirmed
             payload = {
                 "user_id": user_id,
                 "document_hash": stats.get("document_hash") if stats else "unknown",
                 "total_rows": stats.get("total_rows") if stats else 0,
-                "processing_time_ms": stats.get("processing_time_ms") if stats else 0,
-                "dq_clean": dq_stats.get("CLEAN", dq_stats.get("clean", 0)),
-                "dq_recovered": dq_stats.get("RECOVERED_TRANSACTION", dq_stats.get("recovered", 0)),
-                "dq_suspect": dq_stats.get("SUSPECT", dq_stats.get("suspect", 0)),
                 "ip_address": ip if ip else "Unknown"
             }
             
-            # These columns are known to be missing in some versions
-            optional_cols = ["metadata_rows", "dq_non_transaction", "tool_type"]
-            for col in optional_cols:
-                if stats and col in stats:
-                    payload[col] = stats[col]
-                elif col == "tool_type":
-                    payload[col] = tool_type
-
-            logging.info(f"[DEBUG-DB] Attempting insert for {ip}")
+            logging.info(f"[DEBUG-DB] [V3] Minimal Insert for {ip}")
             
-            # Loop to handle "Could not find column" errors by removing them
-            max_retries = 5
-            for _ in range(max_retries):
-                try:
+            # Step 1: Save the core record first
+            try:
+                res = client.table("conversions").insert(payload).execute()
+                if not res.data:
+                    self.last_error = "[V3] No data returned"
+                    return False
+                
+                # Success! Record is saved. Now try to enrich with optional DQ stats.
+                conv_id = res.data[0].get("id")
+                if conv_id:
+                    enrichment = {
+                        "processing_time_ms": stats.get("processing_time_ms") if stats else 0,
+                        "dq_clean": dq_stats.get("CLEAN", dq_stats.get("clean", 0)),
+                        "dq_recovered": dq_stats.get("RECOVERED_TRANSACTION", dq_stats.get("recovered", 0)),
+                        "dq_suspect": dq_stats.get("SUSPECT", dq_stats.get("suspect", 0))
+                    }
+                    try:
+                        client.table("conversions").update(enrichment).eq("id", conv_id).execute()
+                    except:
+                        logging.warning("[V3] Enrichment failed (minor)")
+                
+                self.last_error = None
+                return True
+
+            except Exception as e:
+                err_str = str(e)
+                # Fallback for 'ip_address' vs 'ip'
+                if "ip_address" in err_str:
+                    payload.pop("ip_address")
+                    payload["ip"] = ip if ip else "Unknown"
                     res = client.table("conversions").insert(payload).execute()
                     if res.data:
-                        logging.info(f"DB Success for IP {ip}")
                         self.last_error = None
                         return True
-                    break
-                except Exception as e:
-                    err_str = str(e)
-                    # Check for missing columns
-                    if "Could not find the" in err_str and "column" in err_str:
-                        import re
-                        match = re.search(r"'(.*?)' column", err_str)
-                        if match:
-                            missing_col = match.group(1)
-                            logging.warning(f"Removing missing column from payload: {missing_col}")
-                            if missing_col in payload:
-                                payload.pop(missing_col)
-                                continue
-                    
-                    # Fallback for ip_address -> ip
-                    if 'ip_address' in err_str and 'ip_address' in payload:
-                        logging.warning("Falling back from ip_address to ip")
-                        payload.pop("ip_address")
-                        payload["ip"] = ip if ip else "Unknown"
-                        continue
-                        
-                    raise e
-            
-            return False
+                
+                self.last_error = f"[V3] Insert Error: {err_str}"
+                return False
                 
         except Exception as e:
-            self.last_error = f"Insert Exception: {str(e)}"
-            logging.error(f"Supabase LOG_CONVERSION FAIL: {e}")
+            self.last_error = f"[V3] Critical: {str(e)}"
             return False
 
     def get_user_usage_count(self, user_id: str = None, ip: str = None) -> int:
