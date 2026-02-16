@@ -55,13 +55,24 @@ class SupabaseLogger:
                 "created_at": datetime.now().isoformat()
             }
             
-            # Use data property to ensure we capture the return
-            res = client.table("conversions").insert(payload).execute()
-            if not res.data:
-                self.last_error = f"Insert empty. Response: {res}"
-            else:
-                logging.info(f"DB Success for IP {ip}")
-                self.last_error = None # Clear error on success
+            # Try inserting. If it fails, maybe the column name is 'ip' instead of 'ip_address'
+            try:
+                res = client.table("conversions").insert(payload).execute()
+                if res.data:
+                    logging.info(f"DB Success for IP {ip}")
+                    self.last_error = None
+                    return
+            except Exception as e:
+                # If it failed, try with 'ip' column
+                if 'ip_address' in str(e):
+                    payload.pop("ip_address")
+                    payload["ip"] = ip if ip else "Unknown"
+                    res = client.table("conversions").insert(payload).execute()
+                    if res.data:
+                        logging.info(f"DB Success for IP {ip} (used 'ip' column)")
+                        self.last_error = None
+                        return
+                raise e # Re-raise if it wasn't a column name issue
                 
         except Exception as e:
             self.last_error = f"Insert Exception: {str(e)}"
@@ -79,14 +90,20 @@ class SupabaseLogger:
             if user_id:
                 query = query.eq("user_id", user_id)
             elif ip:
-                # Defensive: Try both 'ip_address' and 'ip' if needed, but 'ip_address' is our standard
-                query = query.eq("ip_address", ip)
+                # Try to count by matching either column if we aren't sure of schema yet
+                try:
+                    res = query.eq("ip_address", ip).execute()
+                    count = res.count if hasattr(res, 'count') else len(res.data)
+                    return count
+                except:
+                    # Fallback to 'ip' column if 'ip_address' fails
+                    query = client.table("conversions").select("id", count="exact")
+                    query = query.gte("created_at", start_of_month)
+                    res = query.eq("ip", ip).execute()
+                    count = res.count if hasattr(res, 'count') else len(res.data)
+                    return count
             else:
                 return 0
-            
-            res = query.execute()
-            count = res.count if hasattr(res, 'count') else len(res.data)
-            return count
         except Exception as e:
             self.last_error = f"Usage Fetch Exception: {str(e)}"
             logging.error(f"Supabase USAGE_FETCH FAIL for {user_id or ip}: {e}")

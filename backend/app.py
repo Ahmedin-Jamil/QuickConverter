@@ -209,9 +209,7 @@ def convert_document():
                 # No longer incrementing GUEST_SESSIONS here as it is deleted
                 pass
 
-            yield json.dumps({"p": 98, "status": "Finalizing..."}) + "\n"
-            
-            # Log to Supabase
+            # Log to Supabase immediately after processing
             db_status = "success"
             try:
                 db_logger.log_conversion(last_stats, user_id=user_id, tool_type=tool_type, browser=browser, ip=ip)
@@ -219,6 +217,8 @@ def convert_document():
                 logging.error(f"DB Log failed: {ex}")
                 db_status = "failed"
 
+            yield json.dumps({"p": 98, "status": "Finalizing..."}) + "\n"
+            
             # Prepare Usage Metadata (Optimistic increment to avoid DB propagation race)
             optimistic_count = usage_used + 1
             if user_tier == 'pro':
@@ -331,6 +331,15 @@ def debug_ip():
 @app.route('/debug/supabase', methods=['GET'])
 def debug_supabase():
     import os
+    # Try to fetch one record to see keys
+    sample_keys = []
+    try:
+        sample = db_logger.admin_client.table("conversions").select("*").limit(1).execute()
+        if sample.data:
+            sample_keys = list(sample.data[0].keys())
+    except:
+        pass
+
     return jsonify({
         "url_found": bool(db_logger.url),
         "key_found": bool(db_logger.key),
@@ -338,11 +347,10 @@ def debug_supabase():
         "client_init": bool(db_logger.client),
         "admin_init": bool(db_logger.admin_client),
         "last_db_error": db_logger.last_error, 
+        "table_keys": sample_keys,
         "env_check": {
             "SUPABASE_SERVICE_ROLE_KEY": bool(os.environ.get("SUPABASE_SERVICE_ROLE_KEY")),
-            "VITE_SUPABASE_SERVICE_ROLE_KEY": bool(os.environ.get("VITE_SUPABASE_SERVICE_ROLE_KEY")),
-            "SUPABASE_ANON_KEY": bool(os.environ.get("SUPABASE_KEY")),
-            "VITE_SUPABASE_ANON_KEY": bool(os.environ.get("VITE_SUPABASE_ANON_KEY"))
+            "VITE_SUPABASE_SERVICE_ROLE_KEY": bool(os.environ.get("VITE_SUPABASE_SERVICE_ROLE_KEY"))
         }
     })
 

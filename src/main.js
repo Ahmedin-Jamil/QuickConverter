@@ -712,9 +712,11 @@ async function processFile(file) {
     function handleChunk(chunk) {
       if (chunk.status === 'success') {
         stopTimer();
-        updateProgressUI(100, "Success", "Rendering ledger...");
         renderResults(chunk);
         updateQuotaFromResponse(chunk.usage);
+        if (chunk.db_log) {
+          console.log('[DEBUG-DB] Backend Log Status:', chunk.db_log);
+        }
         return true;
       } else if (chunk.status === 'failed' || chunk.status === 'limit_reached') {
         stopTimer();
