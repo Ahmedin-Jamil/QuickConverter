@@ -355,17 +355,24 @@ def debug_supabase():
         sample = db_logger.admin_client.table("conversions").select("*").limit(1).execute()
         if sample.data:
             sample_keys = list(sample.data[0].keys())
-    except:
-        pass
+        else:
+            sample_keys = ["TABLE_IS_EMPTY"]
+    except Exception as e:
+        sample_keys = [f"ERR: {str(e)}"]
 
-    # Try to see total count for this IP (no date filter)
     total_ever = 0
     now_ip = get_client_ip()
     try:
+        # Try ip_address first
         res = db_logger.admin_client.table("conversions").select("id", count="exact").eq("ip_address", now_ip).execute()
         total_ever = res.count
     except:
-        pass
+        try:
+            # Fallback to ip
+            res = db_logger.admin_client.table("conversions").select("id", count="exact").eq("ip", now_ip).execute()
+            total_ever = res.count
+        except:
+            pass
 
     return jsonify({
         "url_found": bool(db_logger.url),

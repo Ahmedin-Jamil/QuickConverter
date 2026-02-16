@@ -41,7 +41,7 @@ class SupabaseLogger:
                 logging.warning(self.last_error)
 
     def log_conversion(self, stats: Dict[str, Any], user_id: str = None, tool_type: str = "general", browser: str = None, ip: str = None) -> bool:
-        """Logs conversion and returns True on success, False otherwise."""
+        """Logs conversion with aggressive resilience to schema mismatches."""
         client = self.admin_client or self.client
         if not client:
              self.last_error = "Log Error: No Supabase client initialized."
@@ -49,39 +49,61 @@ class SupabaseLogger:
 
         try:
             dq_stats = stats.get("dq_stats", {}) if stats else {}
+            # Start with a conservative payload based on common denominator
             payload = {
                 "user_id": user_id,
                 "document_hash": stats.get("document_hash") if stats else "unknown",
                 "total_rows": stats.get("total_rows") if stats else 0,
-                "metadata_rows": stats.get("metadata_rows", 0) if stats else 0,
                 "processing_time_ms": stats.get("processing_time_ms") if stats else 0,
                 "dq_clean": dq_stats.get("CLEAN", dq_stats.get("clean", 0)),
                 "dq_recovered": dq_stats.get("RECOVERED_TRANSACTION", dq_stats.get("recovered", 0)),
                 "dq_suspect": dq_stats.get("SUSPECT", dq_stats.get("suspect", 0)),
-                "dq_non_transaction": dq_stats.get("NON_TRANSACTION", dq_stats.get("non_transaction", 0)),
-                "tool_type": tool_type,
                 "ip_address": ip if ip else "Unknown"
             }
+            
+            # These columns are known to be missing in some versions
+            optional_cols = ["metadata_rows", "dq_non_transaction", "tool_type"]
+            for col in optional_cols:
+                if stats and col in stats:
+                    payload[col] = stats[col]
+                elif col == "tool_type":
+                    payload[col] = tool_type
+
             logging.info(f"[DEBUG-DB] Attempting insert for {ip}")
             
-            try:
-                res = client.table("conversions").insert(payload).execute()
-                if res.data:
-                    logging.info(f"DB Success for IP {ip}")
-                    self.last_error = None
-                    return True
-            except Exception as e:
-                if 'ip_address' in str(e):
-                    payload.pop("ip_address")
-                    payload["ip"] = ip if ip else "Unknown"
+            # Loop to handle "Could not find column" errors by removing them
+            max_retries = 5
+            for _ in range(max_retries):
+                try:
                     res = client.table("conversions").insert(payload).execute()
                     if res.data:
-                        logging.info(f"DB Success for IP {ip} (used 'ip' column)")
+                        logging.info(f"DB Success for IP {ip}")
                         self.last_error = None
                         return True
-                raise e
+                    break
+                except Exception as e:
+                    err_str = str(e)
+                    # Check for missing columns
+                    if "Could not find the" in err_str and "column" in err_str:
+                        import re
+                        match = re.search(r"'(.*?)' column", err_str)
+                        if match:
+                            missing_col = match.group(1)
+                            logging.warning(f"Removing missing column from payload: {missing_col}")
+                            if missing_col in payload:
+                                payload.pop(missing_col)
+                                continue
+                    
+                    # Fallback for ip_address -> ip
+                    if 'ip_address' in err_str and 'ip_address' in payload:
+                        logging.warning("Falling back from ip_address to ip")
+                        payload.pop("ip_address")
+                        payload["ip"] = ip if ip else "Unknown"
+                        continue
+                        
+                    raise e
             
-            return False # Fallthrough
+            return False
                 
         except Exception as e:
             self.last_error = f"Insert Exception: {str(e)}"
