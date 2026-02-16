@@ -337,6 +337,7 @@ def debug_supabase():
         "service_key_found": bool(db_logger.service_key),
         "client_init": bool(db_logger.client),
         "admin_init": bool(db_logger.admin_client),
+        "last_db_error": db_logger.last_error, 
         "env_check": {
             "SUPABASE_SERVICE_ROLE_KEY": bool(os.environ.get("SUPABASE_SERVICE_ROLE_KEY")),
             "VITE_SUPABASE_SERVICE_ROLE_KEY": bool(os.environ.get("VITE_SUPABASE_SERVICE_ROLE_KEY")),
