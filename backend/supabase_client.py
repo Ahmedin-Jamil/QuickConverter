@@ -64,18 +64,13 @@ class SupabaseLogger:
         """
         Log conversion metrics to 'conversions' table with geo/tool data.
         """
-        if not self.admin_client:
-            logging.info("Supabase Admin not configured. Using Anon client (may fail RLS).")
-            # Fallback to anon client if admin is missing (though expected to be present)
-            client = self.admin_client or self.client
-        else:
-            client = self.admin_client
-
+        client = self.admin_client or self.client
         if not client:
              logging.info("Supabase not configured. Skipping log.")
              return
 
         try:
+            logging.info(f"Attempting to log conversion for IP: {ip}")
             dq_stats = stats.get("dq_stats", {})
             payload = {
                 "user_id": user_id,
@@ -93,7 +88,7 @@ class SupabaseLogger:
             }
             
             client.table("conversions").insert(payload).execute()
-            logging.info(f"Conversion metrics (tool: {tool_type}) logged to Supabase.")
+            logging.info(f"Conversion metrics (tool: {tool_type}) logged to Supabase for IP: {ip}")
             
         except Exception as e:
             logging.error(f"Failed to log to Supabase: {e}")
@@ -102,8 +97,8 @@ class SupabaseLogger:
         """
         Log UI events (clicks, navigations) for heatmaps/behavioral analysis.
         """
-        if not self.admin_client and not self.client: return
         client = self.admin_client or self.client
+        if not client: return
         try:
             payload = {
                 "user_id": user_id,
@@ -129,11 +124,18 @@ class SupabaseLogger:
 
     def get_user_usage_count(self, user_id: str = None, ip: str = None) -> int:
         """
-        Query Supabase to count conversions for a user or IP address.
+        Query Supabase to count conversions for a user or IP address within the current month.
         """
-        if not self.admin_client: return 0
+        if not self.admin_client:
+            logging.error("Usage fetch failed: admin_client (service role) not initialized.")
+            return 0
         try:
+            # Monthly limit logic: Filter by the first of the current month
+            start_of_month = datetime.now().replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
+            
             query = self.admin_client.table("conversions").select("id", count="exact")
+            query = query.gte("created_at", start_of_month)
+            
             if user_id:
                 query = query.eq("user_id", user_id)
             elif ip:
@@ -144,14 +146,13 @@ class SupabaseLogger:
             res = query.execute()
             return res.count if hasattr(res, 'count') else len(res.data)
         except Exception as e:
-            logging.error(f"Failed to fetch usage count: {e}")
+            logging.error(f"Failed to fetch usage count for {user_id or ip}: {e}")
             return 0
 
     def get_admin_stats(self) -> Dict[str, Any]:
         """
         Aggregate platform-wide metrics for the Super Admin dashboard.
         """
-        # Default empty structure to prevent JS "undefined"
         default_stats = {
             "total_users": 0,
             "pro_users": 0,
@@ -168,31 +169,25 @@ class SupabaseLogger:
             return default_stats
 
         try:
-            logging.info("Fetching admin stats from Supabase...")
-            # 1. Total Users
             profiles = self.admin_client.table("profiles").select("id, tier").execute()
             total_users = len(profiles.data)
             pro_users = len([u for u in profiles.data if u.get('tier') == 'pro'])
             
-            # 2. Total Conversions & Aggregations
             conversions_res = self.admin_client.table("conversions").select("*").execute()
             conversions = conversions_res.data or []
             total_conversions = len(conversions)
             total_rows_processed = sum([(c.get('total_rows') or 0) for c in conversions])
 
-            # Tool Usage Ranking
             tool_ranking = {}
             for c in conversions:
                 t = c.get('tool_type') or 'unknown'
                 tool_ranking[t] = tool_ranking.get(t, 0) + 1
             
-            # Geo Ranking (Countries)
             geo_ranking = {}
             for c in conversions:
                 country = c.get('country') or 'Unknown'
                 geo_ranking[country] = geo_ranking.get(country, 0) + 1
 
-            # 3. Events Ranking (Most Clicked Elements)
             try:
                 events_res = self.admin_client.table("events").select("element").execute()
                 events = events_res.data
@@ -203,7 +198,6 @@ class SupabaseLogger:
             except:
                 click_ranking = {}
 
-            # 4. Fetch User Emails for Mapping (Admin only)
             user_map = {}
             try:
                 users = self.admin_client.auth.admin.list_users()
@@ -212,12 +206,9 @@ class SupabaseLogger:
             except Exception as auth_err:
                 logging.warning(f"Failed to fetch user emails: {auth_err}")
 
-            # Clean up rankings and recent items for JSON safety
             clean_recent = []
             for c in conversions[-10:]:
-                # Ensure all keys are strings and values are JSON serializable
                 clean_c = {str(k): v for k, v in c.items() if k is not None}
-                # Inject user email
                 u_id = c.get('user_id')
                 clean_c['user_email'] = user_map.get(u_id, 'Guest') if u_id else 'Guest'
                 clean_recent.append(clean_c)
@@ -234,8 +225,6 @@ class SupabaseLogger:
             }
         except Exception as e:
             logging.error(f"ADMIN_STATS_CRITICAL_FAIL: {str(e)}")
-            import traceback
-            logging.error(traceback.format_exc())
             return default_stats
 
     def get_conversion_trends(self):
@@ -244,13 +233,8 @@ class SupabaseLogger:
         """
         if not self.client: return []
         try:
-            # Simple aggregation for chart visualization
             res = self.client.table("conversions").select("created_at").execute()
             return res.data
         except Exception as e:
             logging.error(f"Failed to fetch trends: {e}")
             return []
-
-    def log_conversion(self, stats: Dict[str, Any], user_id: str = None, tool_type: str = 'general', browser: str = None, ip: str = None) -> None:
-        logging.info(f'Logging conversion for IP: {ip}, User: {user_id}')
-        # ... rest of function
