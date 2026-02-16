@@ -54,6 +54,7 @@ class SupabaseLogger:
                 "tool_type": tool_type,
                 "ip_address": ip if ip else "Unknown"
             }
+            logging.info(f"[DEBUG-DB] Attempting insert for {ip}. Payload: {payload}")
             
             # Try inserting. If it fails, maybe the column name is 'ip' instead of 'ip_address'
             try:

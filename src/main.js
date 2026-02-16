@@ -274,7 +274,7 @@ async function fetchUsage(targetTier) {
   try {
     const res = await fetch(url);
     const data = await res.json();
-    console.log('[DEBUG-USAGE] Fetch:', data, 'Current Tier:', userTier);
+    console.log('[DEBUG-USAGE] Fetch:', data, 'Current Tier:', userTier, 'IP:', data.ip);
     usageCount = data.used || 0;
 
     // Auto-correct tier based on response

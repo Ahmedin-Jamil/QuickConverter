@@ -96,13 +96,16 @@ def get_user_usage():
     user_id = request.args.get('user_id')
     tier = request.args.get('tier', 'guest')
     
+    logging.info(f"[DEBUG-IP] Headers: {dict(request.headers)}")
+    
     if tier == 'pro':
         return jsonify({"used": 0, "limit": "unlimited"})
         
     if tier == 'guest':
         ip = get_client_ip()
         used = db_logger.get_user_usage_count(ip=ip)
-        return jsonify({"used": used, "limit": 3})
+        logging.info(f"[DEBUG-IP] Guest fetch for {ip} -> {used}")
+        return jsonify({"used": used, "limit": 3, "ip": ip})
 
     # Registered Free User
     used = db_logger.get_user_usage_count(user_id=user_id)
@@ -354,6 +357,15 @@ def debug_supabase():
     except:
         pass
 
+    # Try to see total count for this IP (no date filter)
+    total_ever = 0
+    now_ip = get_client_ip()
+    try:
+        res = db_logger.admin_client.table("conversions").select("id", count="exact").eq("ip_address", now_ip).execute()
+        total_ever = res.count
+    except:
+        pass
+
     return jsonify({
         "url_found": bool(db_logger.url),
         "key_found": bool(db_logger.key),
@@ -362,6 +374,8 @@ def debug_supabase():
         "admin_init": bool(db_logger.admin_client),
         "last_db_error": db_logger.last_error, 
         "table_keys": sample_keys,
+        "detected_ip": now_ip,
+        "total_ever_for_this_ip": total_ever,
         "env_check": {
             "SUPABASE_SERVICE_ROLE_KEY": bool(os.environ.get("SUPABASE_SERVICE_ROLE_KEY")),
             "VITE_SUPABASE_SERVICE_ROLE_KEY": bool(os.environ.get("VITE_SUPABASE_SERVICE_ROLE_KEY"))
