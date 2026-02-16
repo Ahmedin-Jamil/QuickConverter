@@ -109,7 +109,35 @@
     crossorigin="anonymous"></script>
 </head>
 
-<body>
+<body class="maintenance-active">
+  <!-- Maintenance Screen -->
+  <div id="maintenance-screen">
+    <div class="maintenance-content">
+      <img src="QC Logo Green Gradient.svg" alt="QC Logo" class="maintenance-logo">
+      <div class="maintenance-text">
+        <h1 class="maintenance-title">Engine Maintenance</h1>
+        <p class="maintenance-msg">
+          We're currently performing scheduled optimizations to the ETL pipeline.
+          QC will be back online shortly with improved extraction accuracy.
+        </p>
+      </div>
+
+      <div class="maintenance-status-card">
+        <span class="status-label">Operational Status</span>
+        <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:0.5rem;">
+          <span style="font-size:1.1rem; font-weight:700; color:var(--text-primary);">65% Complete</span>
+          <span style="font-size:0.75rem; color:var(--text-muted);">Refactoring Spark Clusters</span>
+        </div>
+        <div class="status-progress-frame">
+          <div class="status-bar-inner"></div>
+        </div>
+      </div>
+
+      <div class="maintenance-footer">
+        &copy; 2026 QC Financial Data Engine. All rights reserved.
+      </div>
+    </div>
+  </div>
   <div id="sidebar-overlay" class="sidebar-overlay"></div>
   <div class="mobile-header">
     <a href="/" class="logo-container">

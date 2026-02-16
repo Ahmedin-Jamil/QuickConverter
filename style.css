@@ -2262,6 +2262,131 @@ h1 {
     border-color: rgba(16, 185, 129, 0.2);
 }
 
+.status-bar::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 1.5s infinite;
+}
+
 #display-user-name {
     line-height: 1.2;
+}
+
+/* Maintenance Mode Styles */
+body.maintenance-active .dashboard-wrapper,
+body.maintenance-active .modal-overlay,
+body.maintenance-active .mobile-header,
+body.maintenance-active #mobile-nav-panel {
+    display: none !important;
+}
+
+#maintenance-screen {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: var(--bg-primary);
+    z-index: 9999;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+body.maintenance-active #maintenance-screen {
+    display: flex;
+}
+
+.maintenance-content {
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    padding: 3rem;
+    border-radius: 2rem;
+    box-shadow: 0 30px 60px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+}
+
+.maintenance-logo {
+    height: 80px;
+    width: auto;
+    filter: drop-shadow(0 0 20px var(--accent-glow));
+}
+
+.maintenance-title {
+    font-family: 'Outfit', sans-serif;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 0.5rem;
+}
+
+.maintenance-msg {
+    color: var(--text-secondary);
+    font-size: 1.1rem;
+    line-height: 1.7;
+    margin-bottom: 1rem;
+}
+
+.maintenance-status-card {
+    width: 100%;
+    padding: 1.5rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+    text-align: left;
+}
+
+.status-label {
+    font-size: 0.75rem;
+    font-weight: 800;
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.75rem;
+    display: block;
+}
+
+.status-progress-frame {
+    height: 6px;
+    background: var(--border-bright);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+.status-bar-inner {
+    height: 100%;
+    width: 65%;
+    background: var(--accent);
+    border-radius: 3px;
+    position: relative;
+}
+
+.status-bar-inner::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    animation: shimmer 1.5s infinite;
+}
+
+.maintenance-footer {
+    font-size: 0.9rem;
+    color: var(--text-muted);
 }
