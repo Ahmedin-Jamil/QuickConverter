@@ -128,6 +128,20 @@ class SupabaseLogger:
             logging.error(f"Supabase USAGE_FETCH FAIL for {user_id or ip}: {e}")
             return 0
 
+    def get_user_tier(self, user_id: str) -> str:
+        """Fetches the actual tier for a given user_id."""
+        client = self.admin_client or self.client
+        if not client or not user_id:
+            return "guest"
+        try:
+            res = client.table("profiles").select("tier").eq("id", user_id).single().execute()
+            if res.data:
+                return res.data.get("tier", "free")
+            return "free" # Default for logged in users
+        except Exception as e:
+            logging.error(f"Failed to fetch tier for {user_id}: {e}")
+            return "free" # Safe fallback for auth users
+
     def log_event(self, event_type: str, element: str, user_id: str = None) -> None:
         client = self.admin_client or self.client
         if not client: return

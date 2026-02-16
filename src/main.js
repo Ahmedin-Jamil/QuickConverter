@@ -29,6 +29,9 @@ let currentUser = null;
 let isSignUpMode = false;
 let processingStartTime = 0;
 let timerInterval = null;
+let targetPercent = 0;
+let visualPercent = 0;
+let progressAnimationId = null;
 
 const QUOTA_LIMITS = {
   'guest': 3,
@@ -180,7 +183,15 @@ async function handleAuthStateChange(session) {
     authGroup.classList.add('hidden');
     if (signOutBtn) signOutBtn.classList.remove('hidden');
 
-    // Fetch Profile for Tier
+    // Default to 'free' (10) for logged in users while profile fetches
+    userTier = 'free';
+    const tierBadge = document.getElementById('display-tier-badge');
+    if (tierBadge) {
+      tierBadge.textContent = '10 CONVERSIONS';
+      tierBadge.className = 'tier-tag';
+    }
+
+    // Fetch Profile for Tier (Source of Truth)
     if (supabase) {
       const { data: profile } = await supabase
         .from('profiles')
@@ -189,23 +200,20 @@ async function handleAuthStateChange(session) {
         .single();
 
       if (profile) {
-        userTier = profile.tier || 'guest';
-
+        userTier = profile.tier || 'free';
         document.getElementById('user-avatar-small').textContent = (profile.full_name || 'U')[0].toUpperCase();
 
         // Update badge display
         const nameEl = document.getElementById('display-user-name');
         if (nameEl) nameEl.textContent = profile.full_name || currentUser.email.split('@')[0];
 
-        const tierBadge = document.getElementById('display-tier-badge');
         if (tierBadge) {
-          tierBadge.textContent = displayTier.toUpperCase();
+          tierBadge.textContent = userTier === 'pro' ? 'PRO' : (userTier === 'free' ? '10 CONVERSIONS' : '3 CONVERSIONS');
           tierBadge.className = `tier-tag ${userTier === 'pro' ? 'pro-tier' : ''}`;
         }
-
-        fetchUsage();
-        updateSizeLimitUI();
       }
+      fetchUsage();
+      updateSizeLimitUI();
     }
   } else {
     currentUser = null;
@@ -278,6 +286,10 @@ async function fetchUsage(targetTier) {
     // Auto-correct tier based on response
     if (data.limit === 'unlimited' || data.limit > 50) {
       userTier = 'pro';
+    } else if (data.limit === 10) {
+      userTier = 'free';
+    } else if (data.limit === 3) {
+      userTier = 'guest';
     }
 
     updateQuotaDisplay();
@@ -294,12 +306,15 @@ function updateQuotaDisplay() {
 
   if (!quotaSection) return;
 
+  quotaSection.classList.remove('hidden');
+
   if (limit === Infinity || userTier === 'pro') {
-    quotaSection.classList.add('hidden');
+    quotaLabel.innerText = "UNLIMITED";
+    quotaBar.style.width = "100%";
+    quotaBar.style.background = "var(--accent-glow)";
     return;
   }
 
-  quotaSection.classList.remove('hidden');
   quotaLabel.innerText = `${usageCount}/${limit}`;
   const percent = (usageCount / limit) * 100;
   quotaBar.style.width = `${Math.min(percent, 100)}%`;
@@ -561,16 +576,22 @@ function updateProgressUI(p, status, subStatus = "", isError = false) {
   const percentTxt = document.getElementById('progress-percent');
   const statusTxt = document.getElementById('progress-status');
   const subStatusTxt = document.getElementById('progress-sub-status');
-  const loaderContainer = document.querySelector('.loader-container');
 
-  if (bar) {
-    bar.style.width = `${p}%`;
-    bar.style.background = isError ? 'var(--error)' : 'var(--accent)';
-  }
+  targetPercent = p;
 
-  if (percentTxt) {
-    percentTxt.innerText = isError ? "!" : `${p}%`;
-    percentTxt.style.color = isError ? 'var(--error)' : 'var(--accent)';
+  if (isError) {
+    if (progressAnimationId) cancelAnimationFrame(progressAnimationId);
+    if (bar) {
+      bar.style.width = `${p}%`;
+      bar.style.background = 'var(--error)';
+    }
+    if (percentTxt) {
+      percentTxt.innerText = "!";
+      percentTxt.style.color = 'var(--error)';
+    }
+  } else {
+    if (bar) bar.style.background = 'var(--accent)';
+    if (percentTxt) percentTxt.style.color = 'var(--accent)';
   }
 
   if (statusTxt) {
@@ -578,20 +599,54 @@ function updateProgressUI(p, status, subStatus = "", isError = false) {
     statusTxt.style.color = isError ? 'var(--error)' : 'var(--text-primary)';
   }
 
-  // Handle Pulse Ring Color on Error
   const ring = document.querySelector('.pulse-ring');
   if (ring) {
     ring.style.borderColor = isError ? 'var(--error)' : 'var(--accent)';
   }
 
-  // Update Status Text only (Timer handled by startTimer)
   subStatusTxt.innerText = subStatus;
 
-  // Hide estimation box if error occurs
   const estBox = document.getElementById('estimated-time-container');
   if (estBox) {
     estBox.style.display = isError ? 'none' : 'flex';
   }
+}
+
+function startProgressAnimation() {
+  if (progressAnimationId) cancelAnimationFrame(progressAnimationId);
+  visualPercent = 0;
+  targetPercent = 0;
+
+  function animate() {
+    const bar = document.getElementById('conversion-progress-bar');
+    const percentTxt = document.getElementById('progress-percent');
+
+    if (!bar || !percentTxt || percentTxt.innerText === "!") return;
+
+    // 1. Smoothly catch up to target, but also slow-creep if target hasn't moved
+    const diff = targetPercent - visualPercent;
+
+    if (diff > 0.5) {
+      // Catch up phase
+      visualPercent += diff * 0.05;
+    } else if (visualPercent < 98) {
+      // Creep phase: 0.01% per frame makes it feel alive
+      visualPercent += 0.01;
+    }
+
+    // Force 100% if target is 100% and we are close
+    if (targetPercent === 100 && visualPercent > 99.5) {
+      visualPercent = 100;
+    }
+
+    bar.style.width = `${visualPercent}%`;
+    percentTxt.innerText = `${Math.floor(visualPercent)}%`;
+
+    if (visualPercent < 100) {
+      progressAnimationId = requestAnimationFrame(animate);
+    }
+  }
+  progressAnimationId = requestAnimationFrame(animate);
 }
 
 function startTimer() {
@@ -642,7 +697,8 @@ async function processFile(file) {
 
   showView('processing');
   startTimer();
-  updateProgressUI(0, "Initiating Extraction Pipeline...", "Establishing Secure Audit Stream");
+  startProgressAnimation();
+  updateProgressUI(5, "Initiating Extraction Pipeline...", "Establishing Secure Audit Stream");
 
   const formData = new FormData();
   formData.append('file', file);
@@ -889,6 +945,9 @@ function showView(viewName) {
 }
 
 function resetUI() {
+  if (progressAnimationId) cancelAnimationFrame(progressAnimationId);
+  visualPercent = 0;
+  targetPercent = 0;
   showView('upload');
   fileInput.value = '';
   // Ensure the correct title is restored

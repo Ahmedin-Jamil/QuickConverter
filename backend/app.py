@@ -106,12 +106,17 @@ def get_user_usage():
     
     res_data = {"used": 0, "limit": 0, "ip": ip}
 
+    if user_id:
+        # Source of truth: Database
+        tier = db_logger.get_user_tier(user_id)
+
     if tier == 'pro':
         res_data = {"used": 0, "limit": "unlimited", "ip": ip}
-    elif tier == 'guest':
+    elif tier == 'guest' and not user_id:
         used = db_logger.get_user_usage_count(ip=ip)
         res_data = {"used": used, "limit": 3, "ip": ip}
     else:
+        # Fallback to free (10) if authenticated or specified free
         used = db_logger.get_user_usage_count(user_id=user_id)
         res_data = {"used": used, "limit": 10, "ip": ip}
 
@@ -146,6 +151,10 @@ def convert_document():
     file_ext = file.filename.split('.')[-1].lower()
 
     # ─── 1. Size Validation (Must happen now while file is open) ───
+    # Authenticated user source of truth
+    if user_id:
+        user_tier = db_logger.get_user_tier(user_id)
+
     size_limits = {'guest': 2, 'free': 10, 'pro': 50}
     max_mb = size_limits.get(user_tier, 2)
     
