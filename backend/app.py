@@ -69,16 +69,20 @@ os.makedirs(OUTPUT_FOLDER, exist_ok=True)
 # Usage stores removed (replaced by Supabase persistence)
 
 def get_client_ip():
-    """Robust IP extraction for Render/Cloudflare/Proxies"""
-    # 1. Cloudflare Priority (since q-convert.com is on CF)
+    """Ultra-robust IP extraction for Render/Cloudflare/Proxies"""
+    # 1. Cloudflare Priority
     cf = request.headers.get('Cf-Connecting-Ip')
-    if cf:
-        return cf
+    if cf: return cf
 
-    # 2. Render Proxy
+    # 2. X-Real-Ip (Some proxies)
+    real_ip = request.headers.get('X-Real-Ip')
+    if real_ip: return real_ip
+
+    # 3. Render / Standard Proxies
     xff = request.headers.get('X-Forwarded-For')
     if xff:
         return xff.split(',')[0].strip()
+    
     return request.remote_addr
 
 
@@ -96,20 +100,24 @@ def get_user_usage():
     user_id = request.args.get('user_id')
     tier = request.args.get('tier', 'guest')
     
-    logging.info(f"[DEBUG-IP] Headers: {dict(request.headers)}")
+    # ─── 0. Aggressive Logging ───
+    ip = get_client_ip()
+    logging.info(f"[DEBUG-USAGE] Fetch for {ip} (Tier: {tier})")
     
-    if tier == 'pro':
-        return jsonify({"used": 0, "limit": "unlimited"})
-        
-    if tier == 'guest':
-        ip = get_client_ip()
-        used = db_logger.get_user_usage_count(ip=ip)
-        logging.info(f"[DEBUG-IP] Guest fetch for {ip} -> {used}")
-        return jsonify({"used": used, "limit": 3, "ip": ip})
+    res_data = {"used": 0, "limit": 0, "ip": ip}
 
-    # Registered Free User
-    used = db_logger.get_user_usage_count(user_id=user_id)
-    return jsonify({"used": used, "limit": 10})
+    if tier == 'pro':
+        res_data = {"used": 0, "limit": "unlimited", "ip": ip}
+    elif tier == 'guest':
+        used = db_logger.get_user_usage_count(ip=ip)
+        res_data = {"used": used, "limit": 3, "ip": ip}
+    else:
+        used = db_logger.get_user_usage_count(user_id=user_id)
+        res_data = {"used": used, "limit": 10, "ip": ip}
+
+    response = jsonify(res_data)
+    response.headers['Cache-Control'] = 'no-store, no-cache, must-revalidate, max-age=0'
+    return response
 
 
 import json
@@ -124,15 +132,12 @@ def convert_document():
     if file.filename == '':
         return jsonify({"error": "No selected file"}), 400
 
+    # User Context
     target_format = request.form.get('target_format', 'xlsx')
     user_tier = request.form.get('tier', 'guest')
     user_id = request.form.get('user_id')
     tool_type = request.form.get('tool_type', 'unknown')
     user_email = request.form.get('user_email', '').lower()
-    
-    # OWNER_BYPASS: jamil.al.amin1100@gmail.com gets unlimited tier
-    if user_email == 'jamil.al.amin1100@gmail.com':
-        user_tier = 'pro'
 
     # ─── 0. Grab Metadata Before Request Finishes ───
     # On Render, the real IP is in X-Forwarded-For
@@ -219,12 +224,8 @@ def convert_document():
                 pass
 
             # Log to Supabase immediately after processing
-            db_status = "success"
-            try:
-                db_logger.log_conversion(last_stats, user_id=user_id, tool_type=tool_type, browser=browser, ip=ip)
-            except Exception as ex:
-                logging.error(f"DB Log failed: {ex}")
-                db_status = "failed"
+            db_success = db_logger.log_conversion(last_stats, user_id=user_id, tool_type=tool_type, browser=browser, ip=ip)
+            db_status = "success" if db_success else f"error: {db_logger.last_error}"
 
             yield json.dumps({"p": 98, "status": "Finalizing..."}) + "\n"
             
@@ -245,7 +246,7 @@ def convert_document():
                 "preview": final_result.get("preview_data", []),
                 "download_url": f"{API_BASE_URL}/download/{out_filename}",
                 "document_hash": last_stats["document_hash"],
-                "usage": {"used": optimistic_count, "limit": usage_limit},
+                "usage": {"used": optimistic_count, "limit": usage_limit, "ip": ip},
                 "db_log": db_status
             }) + "\n"
 

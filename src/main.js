@@ -190,8 +190,6 @@ async function handleAuthStateChange(session) {
 
       if (profile) {
         userTier = profile.tier || 'guest';
-        // OWNER BYPASS: matching backend logic
-        if (currentUser.email === 'jamil.al.amin1100@gmail.com') userTier = 'pro';
 
         document.getElementById('user-avatar-small').textContent = (profile.full_name || 'U')[0].toUpperCase();
 
@@ -715,7 +713,14 @@ async function processFile(file) {
         renderResults(chunk);
         updateQuotaFromResponse(chunk.usage);
         if (chunk.db_log) {
-          console.log('[DEBUG-DB] Backend Log Status:', chunk.db_log);
+          if (chunk.db_log.startsWith('error:')) {
+            console.error('[DEBUG-DB] Backend Log FAILED:', chunk.db_log);
+          } else {
+            console.log('[DEBUG-DB] Backend Log Status:', chunk.db_log);
+          }
+        }
+        if (chunk.usage && chunk.usage.ip) {
+          console.log('[DEBUG-IP] Conversion IP:', chunk.usage.ip);
         }
         return true;
       } else if (chunk.status === 'failed' || chunk.status === 'limit_reached') {
