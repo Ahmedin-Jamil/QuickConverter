@@ -328,6 +328,23 @@ def debug_ip():
         "remote": request.remote_addr
     })
 
+@app.route('/debug/supabase', methods=['GET'])
+def debug_supabase():
+    import os
+    return jsonify({
+        "url_found": bool(db_logger.url),
+        "key_found": bool(db_logger.key),
+        "service_key_found": bool(db_logger.service_key),
+        "client_init": bool(db_logger.client),
+        "admin_init": bool(db_logger.admin_client),
+        "env_check": {
+            "SUPABASE_SERVICE_ROLE_KEY": bool(os.environ.get("SUPABASE_SERVICE_ROLE_KEY")),
+            "VITE_SUPABASE_SERVICE_ROLE_KEY": bool(os.environ.get("VITE_SUPABASE_SERVICE_ROLE_KEY")),
+            "SUPABASE_ANON_KEY": bool(os.environ.get("SUPABASE_KEY")),
+            "VITE_SUPABASE_ANON_KEY": bool(os.environ.get("VITE_SUPABASE_ANON_KEY"))
+        }
+    })
+
 
 if __name__ == '__main__':
     # Use environment port for Render/Railway
